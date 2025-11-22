@@ -1,0 +1,50 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2025-11-22 09:11:53.220336",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date",
+   "mandatory": 0,
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date",
+   "mandatory": 0,
+   "wildcard_filter": 0
+  }
+ ],
+ "idx": 0,
+ "is_standard": "Yes",
+ "javascript": "frappe.query_reports[\"Job Records\"] = {\n    filters: [\n        {\n            fieldname: \"from_date\",\n            label: \"From Date\",\n            fieldtype: \"Date\",\n            default: frappe.datetime.add_days(frappe.datetime.get_today(), -30),\n            reqd: 1\n        },\n        {\n            fieldname: \"to_date\",\n            label: \"To Date\",\n            fieldtype: \"Date\",\n            default: frappe.datetime.get_today(),\n            reqd: 1\n        }\n       \n    ],\n\n    onload: function(report) {\n      report.page.add_inner_button(\"Job Records List\", function () {\n    const url = \"/app/job-record/view/list?date=%5B%22Timespan%22%2C%22last+30+days%22%5D\";\n    window.location.href = url; \n});\n\n\n\n       \n    }\n};\n",
+ "letter_head": "",
+ "letterhead": null,
+ "modified": "2025-11-22 11:00:14.001144",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Job Records",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "SELECT \n    jr.name AS \"ID:Link/Job Record:180\",\n    jr.date AS \"Date:Date:100\",\n    jr.job_type AS \"Job Type:Data:120\",\n    jr.custom_branch AS \"Branch:Data:120\",\n    jr.current_operational_status AS \"Current Operational Status:Data:180\",\n    jr.job_status AS \"Job Status:Data:120\",\n    jr.custom_customer_name AS \"Customer Name:Data:180\",\n    jr.custom_place_of_delivery AS \"Place of Delivery:Data:180\",\n    jr.custom_place_of_receipt AS \"Place of Receipt:Data:180\",\n    jr.custom_eta AS \"ETA:Datetime:150\",\n    jr.custom_etd AS \"ETD:Datetime:150\",\n    jr.custom_created_by AS \"Created By:Link/User:140\",\n    jr.custom_employee_name AS \"Employee Name:Data:150\",\n    jr.custom_attentions AS \"Attention:Data:150\"\nFROM \n    `tabJob Record` jr\nWHERE\n    jr.docstatus < 2\n    AND jr.date BETWEEN %(from_date)s AND %(to_date)s\nORDER BY \n    jr.date DESC;\n",
+ "ref_doctype": "Job Record",
+ "report_name": "Job Records",
+ "report_script": "results = frappe.get_all(\n    'Job Record',\n    fields=[\n        'name', 'date', 'job_type', 'custom_branch', 'current_operational_status',\n        'job_status', 'custom_customer_name', 'custom_place_of_delivery',\n        'custom_place_of_receipt', 'custom_eta', 'custom_etd', 'custom_created_by',\n        'custom_sales_executive', 'custom_attentions'\n    ],\n    filters={\n        \"docstatus\": [\"<\", 2], \n        \"date\": [\"between\", [filters.get(\"from_date\"), filters.get(\"to_date\")]]\n    },\n    order_by=\"date DESC\"\n)\n\ncolumns = [\n    {\"fieldname\": \"name\", \"label\": _(\"ID\"), \"fieldtype\": \"Link\", \"options\": \"Job Record\", \"width\": 180},\n    {\"fieldname\": \"date\", \"label\": _(\"Date\"), \"fieldtype\": \"Date\", \"width\": 100},\n    {\"fieldname\": \"job_type\", \"label\": _(\"Job Type\"), \"fieldtype\": \"Data\", \"width\": 120},\n    {\"fieldname\": \"custom_branch\", \"label\": _(\"Branch\"), \"fieldtype\": \"Data\", \"width\": 120},\n    {\"fieldname\": \"current_operational_status\", \"label\": _(\"Current Operational Status\"), \"fieldtype\": \"Data\", \"width\": 180},\n    {\"fieldname\": \"job_status\", \"label\": _(\"Job Status\"), \"fieldtype\": \"Data\", \"width\": 120},\n    {\"fieldname\": \"custom_customer_name\", \"label\": _(\"Customer Name\"), \"fieldtype\": \"Data\", \"width\": 180},\n    {\"fieldname\": \"custom_place_of_delivery\", \"label\": _(\"Place of Delivery\"), \"fieldtype\": \"Data\", \"width\": 180},\n    {\"fieldname\": \"custom_place_of_receipt\", \"label\": _(\"Place of Receipt\"), \"fieldtype\": \"Data\", \"width\": 180},\n    {\"fieldname\": \"custom_eta\", \"label\": _(\"ETA\"), \"fieldtype\": \"Datetime\", \"width\": 150},\n    {\"fieldname\": \"custom_etd\", \"label\": _(\"ETD\"), \"fieldtype\": \"Datetime\", \"width\": 150},\n    {\"fieldname\": \"custom_created_by\", \"label\": _(\"Created By\"), \"fieldtype\": \"Link\", \"options\": \"User\", \"width\": 140},\n    {\"fieldname\": \"custom_sales_executive\", \"label\": _(\"Sales Executive\"), \"fieldtype\": \"Data\", \"width\": 150},\n    {\"fieldname\": \"custom_attentions\", \"label\": _(\"Attention\"), \"fieldtype\": \"Data\", \"width\": 150}\n]\n\ndata = columns, results\n",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "All"
+  }
+ ],
+ "timeout": 0
+}

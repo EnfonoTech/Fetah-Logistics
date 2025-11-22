@@ -1,0 +1,157 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "prompt",
+ "creation": "2025-11-21 13:56:11.951924",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "general_section",
+  "date",
+  "job_type",
+  "job_status",
+  "column_break_gvrt",
+  "company",
+  "customer",
+  "naming_series",
+  "total_expense"
+ ],
+ "fields": [
+  {
+   "fieldname": "general_section",
+   "fieldtype": "Section Break",
+   "label": "General"
+  },
+  {
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "label": "Date"
+  },
+  {
+   "fieldname": "job_type",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Job Type",
+   "options": "\nTRANSPORTATION\nCUSTOMS CLEARANCE\nWAREHOUSE"
+  },
+  {
+   "fieldname": "job_status",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Job Status",
+   "options": "Pending\nIn Progress\nCompleted\nOn Hold\nCancelled"
+  },
+  {
+   "fieldname": "column_break_gvrt",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Naming Series",
+   "options": "\nFLD/LT/.YY./.MM./\nFL/LT/.YY./.MM./\nFLJ/LT/.YY./.MM./\nFLD/WH/.YY./.MM./\nFL/WH/.YY./.MM./\nFLJ/WH/.YY./.MM./\nFLD/PKG/.YY./.MM./\nFL/PKG/.YY./.MM./\nFLJ/PKG/.YY./.MM./\nFLD/CRA/.YY./.MM./\nFL/CRA/.YY./.MM./\nFLJ/CRA/.YY./.MM./"
+  },
+  {
+   "fieldname": "total_expense",
+   "fieldtype": "Currency",
+   "label": "Total Expense",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Details",
+   "link_doctype": "Sales Invoice",
+   "link_fieldname": "custom_job_record"
+  },
+  {
+   "group": "Details",
+   "link_doctype": "Purchase Invoice",
+   "link_fieldname": "custom_job_record"
+  },
+  {
+   "group": "Details",
+   "link_doctype": "Journal Entry",
+   "link_fieldname": "custom_job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Stock Entry",
+   "link_fieldname": "custom_job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Purchase Receipt",
+   "link_fieldname": "custom_job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Delivery Note",
+   "link_fieldname": "custom_job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Truck Way Bill",
+   "link_fieldname": "reference_job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Packing List",
+   "link_fieldname": "job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Survey Report",
+   "link_fieldname": "job_record"
+  },
+  {
+   "custom": 1,
+   "link_doctype": "Delivery Trip",
+   "link_fieldname": "custom_select_job"
+  }
+ ],
+ "modified": "2025-11-22 10:48:51.126534",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Job Record",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

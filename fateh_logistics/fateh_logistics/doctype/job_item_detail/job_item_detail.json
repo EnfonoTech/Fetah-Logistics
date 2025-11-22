@@ -1,0 +1,122 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-06-05 21:11:55.684488",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item",
+  "item_name",
+  "column_break_foww",
+  "uom",
+  "quantity",
+  "section_break_xrve",
+  "valuation_rate",
+  "valuation_amount",
+  "column_break_mmuo",
+  "rate",
+  "amount",
+  "section_break_jqgs",
+  "profit",
+  "from_quotation"
+ ],
+ "fields": [
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "column_break_foww",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "item.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item.stock_uom",
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Quantity"
+  },
+  {
+   "fieldname": "section_break_xrve",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "valuation_rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Valuation Rate"
+  },
+  {
+   "fieldname": "column_break_mmuo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "valuation_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Valuation Amount"
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Selling Rate"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount"
+  },
+  {
+   "fieldname": "section_break_jqgs",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "profit",
+   "fieldtype": "Currency",
+   "label": "Profit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "from_quotation",
+   "fieldtype": "Link",
+   "label": "From Quotation",
+   "options": "Quotation",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-06-13 21:00:28.785099",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Job Item Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

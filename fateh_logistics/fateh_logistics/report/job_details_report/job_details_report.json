@@ -1,0 +1,31 @@
+{
+ "add_total_row": 1,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2025-11-21 16:08:59.456433",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "",
+ "letterhead": null,
+ "modified": "2025-11-22 09:35:51.650767",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Job Details Report",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "WITH Job_Invoices AS (\n    SELECT \n        jr.name AS job_record, -- Explicitly aliasing job_record\n        'Sales' AS invoice_type,\n        si.name AS invoice_id,\n        si.grand_total AS total_amount, \n        si.outstanding_amount AS sales_outstanding_amount,\n        0 AS purchase_outstanding_amount\n    FROM \n        `tabJob Record` jr\n    JOIN \n        `tabSales Invoice` si ON si.custom_job_record = jr.name AND si.docstatus = 1\n\n    UNION ALL\n\n    SELECT \n        jr.name AS job_record, -- Explicitly aliasing job_record\n        'Purchase' AS invoice_type,\n        pi.name AS invoice_id,\n        pi.grand_total AS total_amount,\n        0 AS sales_outstanding_amount,\n        pi.outstanding_amount AS purchase_outstanding_amount\n    FROM \n        `tabJob Record` jr\n    JOIN \n        `tabPurchase Invoice` pi ON pi.custom_job_record = jr.name AND pi.docstatus = 1\n\n    UNION ALL\n\n    SELECT \n        jr.name AS job_record, -- Explicitly aliasing job_record\n        'Journal Entry' AS invoice_type,\n        je.name AS invoice_id,\n        SUM(jea.debit) AS total_amount,\n        0 AS sales_outstanding_amount,\n        0 AS purchase_outstanding_amount\n    FROM \n        `tabJob Record` jr\n    JOIN \n        `tabJournal Entry` je ON je.custom_job_record = jr.name AND je.docstatus = 1\n    JOIN \n        `tabJournal Entry Account` jea ON jea.parent = je.name AND jea.debit > 0\n    GROUP BY\n        jr.name, je.name\n)\n\nSELECT \n    CASE \n        WHEN ROW_NUMBER() OVER (PARTITION BY job_record ORDER BY invoice_type, invoice_id) = 1 THEN job_record\n        ELSE ''\n    END AS \"Job Record:Link/Job Record:180\", -- Referencing alias correctly\n    invoice_type AS \"Invoice Type:Data/Invoice Type:150\",\n    invoice_id AS \"Invoice ID:Data/Invoice ID:200\",\n    total_amount AS \"Total Amount:Currency/Total Amount:180,2\",\n    sales_outstanding_amount AS \"Sales Outstanding:Currency/Sales Outstanding:180,2\",\n    purchase_outstanding_amount AS \"Purchase Outstanding:Currency/Purchase Outstanding:180,2\"\nFROM Job_Invoices\nORDER BY \n    job_record, invoice_type, invoice_id;\n",
+ "ref_doctype": "Job Record",
+ "report_name": "Job Details Report",
+ "report_script": "",
+ "report_type": "Query Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  }
+ ],
+ "timeout": 0
+}

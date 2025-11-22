@@ -1,0 +1,34 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2025-11-21 16:08:29.648757",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [],
+ "idx": 0,
+ "is_standard": "Yes",
+ "json": "{\"filters\":[[\"Job Record\",\"date\",\"Timespan\",\"last 30 days\",false]],\"fields\":[[\"name\",\"Job Record\"],[\"date\",\"Job Record\"],[\"custom_branch\",\"Job Record\"],[\"job_type\",\"Job Record\"],[\"job_status\",\"Job Record\"],[\"custom_customer_name\",\"Job Record\"],[\"custom_place_of_receipt\",\"Job Record\"],[\"custom_place_of_delivery\",\"Job Record\"],[\"custom_etd\",\"Job Record\"],[\"custom_eta\",\"Job Record\"],[\"current_operational_status\",\"Job Record\"],[\"custom_employee_name\",\"Job Record\"],[\"custom_created_by\",\"Job Record\"]],\"order_by\":\"`tabJob Record`.`modified` desc\",\"add_totals_row\":0,\"page_length\":20,\"column_widths\":{\"name\":120,\"date\":120,\"custom_branch\":120,\"job_type\":120,\"job_status\":120,\"custom_customer_name\":120,\"custom_place_of_receipt\":120,\"custom_place_of_delivery\":120,\"custom_etd\":120,\"custom_eta\":120,\"current_operational_status\":120,\"custom_employee_name\":120,\"custom_created_by\":120},\"group_by\":null}",
+ "letter_head": "",
+ "letterhead": null,
+ "modified": "2025-11-21 16:09:29.194317",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Job Record",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Job Record",
+ "reference_report": "",
+ "report_name": "Job Record",
+ "report_type": "Report Builder",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "All"
+  }
+ ],
+ "timeout": 0
+}

@@ -1,0 +1,54 @@
+{
+ "add_total_row": 0,
+ "add_translate_data": 0,
+ "columns": [],
+ "creation": "2025-11-21 15:31:41.970715",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "filters": [
+  {
+   "fieldname": "from_date",
+   "fieldtype": "Date",
+   "label": "From Date",
+   "mandatory": 1,
+   "wildcard_filter": 0
+  },
+  {
+   "fieldname": "to_date",
+   "fieldtype": "Date",
+   "label": "To Date",
+   "mandatory": 1,
+   "wildcard_filter": 0
+  }
+ ],
+ "idx": 0,
+ "is_standard": "Yes",
+ "letter_head": "",
+ "letterhead": null,
+ "modified": "2025-11-21 16:05:58.778318",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Job Record Financial Summary",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "query": "SELECT\n    jr.name AS \"Job Record:Link/Job Record:200\",\n    COALESCE(si.sales_total, 0) AS \"Sales (W/O VAT):Currency:200\",\n    COALESCE(pi.purchase_total, 0) AS \"Purchase (W/O VAT):Currency:200\",\n    COALESCE(je.total_debit, 0) AS \"Journal Entries:Currency:200\",\n    (COALESCE(si.sales_total, 0) - COALESCE(pi.purchase_total, 0) - COALESCE(je.total_debit, 0)) AS \"P&L:Currency:200\"\nFROM\n    `tabJob Record` jr\nLEFT JOIN (\n    SELECT\n        custom_job_record,\n        SUM(base_total) AS sales_total\n    FROM `tabSales Invoice`\n    WHERE docstatus = 1\n    GROUP BY custom_job_record\n) si ON si.custom_job_record = jr.name\nLEFT JOIN (\n    SELECT\n        custom_job_record,\n        SUM(base_total) AS purchase_total\n    FROM `tabPurchase Invoice`\n    WHERE docstatus = 1\n    GROUP BY custom_job_record\n) pi ON pi.custom_job_record = jr.name\nLEFT JOIN (\n    SELECT\n        custom_job_record,\n        SUM(total_debit) AS total_debit\n    FROM `tabJournal Entry`\n    WHERE docstatus = 1\n    GROUP BY custom_job_record\n) je ON je.custom_job_record = jr.name\nWHERE\n    jr.date BETWEEN %(from_date)s AND %(to_date)s\nORDER BY jr.name DESC\n",
+ "ref_doctype": "Job Record",
+ "report_name": "Job Record Financial Summary",
+ "report_type": "Query Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Leave Approver"
+  },
+  {
+   "role": "Operations Executive"
+  },
+  {
+   "role": "Warehouse Executive"
+  }
+ ],
+ "timeout": 0
+}
