@@ -1,6 +1,21 @@
 ### Fateh Logistics
 
-custom app for logistics module
+Custom app for comprehensive logistics module management built on Frappe Framework/ERPNext.
+
+## 📚 Documentation
+
+For complete documentation, see [DOCUMENTATION.md](./DOCUMENTATION.md)
+
+The documentation covers:
+- Overview and core concepts
+- Installation and setup
+- Key doctypes and workflows
+- API reference
+- Features and customizations
+- Usage examples
+- Troubleshooting guide
+
+## Quick Start
 
 ### Installation
 

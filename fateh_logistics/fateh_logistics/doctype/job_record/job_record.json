@@ -66,8 +66,7 @@
    "fieldtype": "Select",
    "in_filter": 1,
    "in_list_view": 1,
-   "label": "Naming Series",
-   "options": "\nFLD/LT/.YY./.MM./\nFL/LT/.YY./.MM./\nFLJ/LT/.YY./.MM./\nFLD/WH/.YY./.MM./\nFL/WH/.YY./.MM./\nFLJ/WH/.YY./.MM./\nFLD/PKG/.YY./.MM./\nFL/PKG/.YY./.MM./\nFLJ/PKG/.YY./.MM./\nFLD/CRA/.YY./.MM./\nFL/CRA/.YY./.MM./\nFLJ/CRA/.YY./.MM./"
+   "label": "Naming Series"
   },
   {
    "fieldname": "total_expense",

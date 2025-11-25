@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Welcome to Flame Logistics ERP</span>\",\"col\":12}},{\"id\":\"gQIFA0nyEN\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Customers\",\"col\":3}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"aS4BILSd-z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Quicke Access</b></span>\",\"col\":12}},{\"id\":\"hM73gUdjY0\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"New Job Record\",\"col\":3}},{\"id\":\"BVrpnnfAEt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Warehouse Job Record\",\"col\":3}},{\"id\":\"g3jxTbxGVK\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Records\",\"col\":3}},{\"id\":\"CPxEyhaf3G\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Invoice\",\"col\":3}},{\"id\":\"rnxumDIW37\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Purchase Invoice\",\"col\":3}},{\"id\":\"mKAK6AG8kw\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":3}},{\"id\":\"2EJ7I0vlw7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Supplier\",\"col\":3}},{\"id\":\"DU_mfrgeZn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Delivery Trip\",\"col\":3}},{\"id\":\"GRROzCU0Hp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Truck Way Bill\",\"col\":3}},{\"id\":\"_RlmdxthHH\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Journal Entry\",\"col\":3}},{\"id\":\"kDwzdhoBht\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Entry\",\"col\":3}},{\"id\":\"EMXn7iGmut\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"IVsaaNrgz_\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Accounts Payable\",\"col\":3}},{\"id\":\"hisEOezol6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Packing List\",\"col\":3}},{\"id\":\"xncJxcF7sH\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Survey Report\",\"col\":3}},{\"id\":\"y6Y4ljLVB4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"puPWKRCisc\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"Fo3OJCNHHZ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Vehicle Type\",\"col\":3}},{\"id\":\"GWF_-rOa1L\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Vehicle\",\"col\":3}},{\"id\":\"asPJ12X-vm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Operational Status\",\"col\":3}},{\"id\":\"rBYmlVeLFV\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"FfKr0Ft5Oy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Record Report\",\"col\":3}},{\"id\":\"b3uVkEMq59\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Warehouse Job Report\",\"col\":3}},{\"id\":\"QzocADrtxE\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Record Report-Detailed\",\"col\":3}},{\"id\":\"NFTKDs5WbR\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Record Financial Summary\",\"col\":3}}]",
+ "content": "[{\"id\":\"kb3XPLg8lb\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h5\\\">Welcome to Logistics ERP</span>\",\"col\":12}},{\"id\":\"gQIFA0nyEN\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Active Customers\",\"col\":3}},{\"id\":\"d_KVM1gsf9\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"aS4BILSd-z\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Quicke Access</b></span>\",\"col\":12}},{\"id\":\"hM73gUdjY0\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"New Job Record\",\"col\":3}},{\"id\":\"BVrpnnfAEt\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Warehouse Job Record\",\"col\":3}},{\"id\":\"g3jxTbxGVK\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Records\",\"col\":3}},{\"id\":\"CPxEyhaf3G\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Invoice\",\"col\":3}},{\"id\":\"rnxumDIW37\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Purchase Invoice\",\"col\":3}},{\"id\":\"mKAK6AG8kw\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":3}},{\"id\":\"2EJ7I0vlw7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Supplier\",\"col\":3}},{\"id\":\"DU_mfrgeZn\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Delivery Trip\",\"col\":3}},{\"id\":\"GRROzCU0Hp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Truck Way Bill\",\"col\":3}},{\"id\":\"_RlmdxthHH\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Journal Entry\",\"col\":3}},{\"id\":\"kDwzdhoBht\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Entry\",\"col\":3}},{\"id\":\"EMXn7iGmut\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"IVsaaNrgz_\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Accounts Payable\",\"col\":3}},{\"id\":\"hisEOezol6\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Packing List\",\"col\":3}},{\"id\":\"xncJxcF7sH\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Survey Report\",\"col\":3}},{\"id\":\"y6Y4ljLVB4\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"puPWKRCisc\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"Fo3OJCNHHZ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Vehicle Type\",\"col\":3}},{\"id\":\"GWF_-rOa1L\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Vehicle\",\"col\":3}},{\"id\":\"asPJ12X-vm\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Operational Status\",\"col\":3}},{\"id\":\"rBYmlVeLFV\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports</b></span>\",\"col\":12}},{\"id\":\"FfKr0Ft5Oy\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Record Report\",\"col\":3}},{\"id\":\"b3uVkEMq59\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Warehouse Job Report\",\"col\":3}},{\"id\":\"QzocADrtxE\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Record Report-Detailed\",\"col\":3}},{\"id\":\"NFTKDs5WbR\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Job Record Financial Summary\",\"col\":3}}]",
  "creation": "2025-11-21 17:12:48.410142",
  "custom_blocks": [],
  "docstatus": 0,
@@ -201,7 +201,7 @@
    "type": "Link"
   }
  ],
- "modified": "2025-11-21 17:13:56.341100",
+ "modified": "2025-11-25 13:38:54.682888",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Logistics",
@@ -223,6 +223,14 @@
  ],
  "sequence_id": 1.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Job Records",
+   "link_to": "Job Record",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
   {
    "color": "Grey",
    "doc_view": "List",
@@ -318,14 +326,6 @@
    "link_to": "Vehicle Type",
    "stats_filter": "[]",
    "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Job Records",
-   "link_to": "Job Records",
-   "report_ref_doctype": "Job Record",
-   "type": "Report"
   },
   {
    "color": "Grey",
