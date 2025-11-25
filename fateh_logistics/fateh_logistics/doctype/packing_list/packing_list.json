@@ -121,7 +121,7 @@
    "make_attachment_public": 0,
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nPL.YY.MM.###\nPLD.YY.MM.###\nPLJ.YY.MM.###",
+   "options": "\nPL.YY.MM.###",
    "permlevel": 0,
    "precision": "",
    "print_hide": 0,

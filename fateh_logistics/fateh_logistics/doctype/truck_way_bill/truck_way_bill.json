@@ -72,7 +72,7 @@
    "make_attachment_public": 0,
    "no_copy": 0,
    "non_negative": 0,
-   "options": "\nFL/TWB/.YY./.MM./.####\nFLJ/TWB/.YY./.MM./.####\nFLD/TWB/.YY./.MM./.####",
+   "options": "\nTWB/.YY./.MM./",
    "permlevel": 0,
    "precision": "",
    "print_hide": 0,
