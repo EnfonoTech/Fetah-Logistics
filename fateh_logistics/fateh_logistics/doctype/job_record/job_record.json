@@ -7,14 +7,75 @@
  "engine": "InnoDB",
  "field_order": [
   "general_section",
-  "date",
-  "job_type",
-  "job_status",
-  "column_break_gvrt",
-  "company",
-  "customer",
   "naming_series",
-  "total_expense"
+  "total_expense",
+  "date",
+  "company",
+  "branch",
+  "job_type",
+  "quotation",
+  "region_id",
+  "job_type_id",
+  "job_status",
+  "shipper",
+  "consignee",
+  "column_break_gvrt",
+  "build_by",
+  "created_by",
+  "customer",
+  "customer_name",
+  "attention",
+  "attentions",
+  "pobl_no",
+  "blawb_no",
+  "additional_info",
+  "truck_no",
+  "place_of_receipt",
+  "etd",
+  "twb_no",
+  "is_hazardous_",
+  "remarks",
+  "column_break_xlvn4",
+  "place_of_delivery",
+  "eta",
+  "twb_date",
+  "sales_executive",
+  "pol",
+  "customs_clearance_information",
+  "delivery_address",
+  "column_break_tssko",
+  "mode",
+  "port",
+  "package_details",
+  "number_of_packagescontainer_pallets",
+  "gross_weight_kg",
+  "volume_cbm",
+  "hs_description",
+  "column_break_vnqrl",
+  "units",
+  "volume_weight_kg",
+  "hs_code",
+  "package_information",
+  "package_table",
+  "section_break_gvqkc",
+  "total_quantity",
+  "total_weight",
+  "column_break_7fkot",
+  "total_sqmtr",
+  "total_cbm",
+  "operational_information",
+  "operational_informations",
+  "section_break_anaqv",
+  "current_operational_status",
+  "vouchers",
+  "fetch_vouchers",
+  "vouchers2",
+  "section_break_qltxg",
+  "total_sales_sar",
+  "column_break_dz8pe",
+  "total_cost_sar",
+  "column_break_8xg0c",
+  "gp_sar"
  ],
  "fields": [
   {
@@ -66,13 +127,361 @@
    "fieldtype": "Select",
    "in_filter": 1,
    "in_list_view": 1,
-   "label": "Naming Series"
+   "label": "Naming Series",
+   "options": "\nJOB-.#####"
   },
   {
    "fieldname": "total_expense",
    "fieldtype": "Currency",
    "label": "Total Expense",
    "read_only": 1
+  },
+  {
+   "fieldname": "additional_info",
+   "fieldtype": "Section Break",
+   "label": "Additional info"
+  },
+  {
+   "fieldname": "attention",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Attention"
+  },
+  {
+   "fieldname": "attentions",
+   "fieldtype": "Link",
+   "label": "Attention",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "blawb_no",
+   "fieldtype": "Data",
+   "label": "BAYAN/AWB No",
+   "translatable": 1
+  },
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Branch",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "build_by",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Build By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7fkot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_8xg0c",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_dz8pe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_tssko",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_vnqrl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_xlvn4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "consignee",
+   "fieldtype": "Data",
+   "label": "Consignee",
+   "translatable": 1
+  },
+  {
+   "fetch_from": "build_by.full_name",
+   "fieldname": "created_by",
+   "fieldtype": "Data",
+   "label": "Created By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "current_operational_status",
+   "fieldtype": "Data",
+   "label": "Current Operational Status"
+  },
+  {
+   "fetch_from": "customer.customer_name",
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer Name",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "depends_on": "eval:doc.job_type == 'Customs Clearance';",
+   "fieldname": "customs_clearance_information",
+   "fieldtype": "Section Break",
+   "label": "Customs Clearance Information"
+  },
+  {
+   "fieldname": "delivery_address",
+   "fieldtype": "Small Text",
+   "label": "Delivery Address",
+   "translatable": 1
+  },
+  {
+   "fieldname": "eta",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "ETA"
+  },
+  {
+   "fieldname": "etd",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "ETD"
+  },
+  {
+   "fieldname": "fetch_vouchers",
+   "fieldtype": "Button",
+   "label": "Fetch Vouchers"
+  },
+  {
+   "fieldname": "gp_sar",
+   "fieldtype": "Currency",
+   "label": "GP (SAR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gross_weight_kg",
+   "fieldtype": "Data",
+   "label": "Gross Weight (kg)"
+  },
+  {
+   "fieldname": "hs_code",
+   "fieldtype": "Data",
+   "label": "HS Code"
+  },
+  {
+   "fieldname": "hs_description",
+   "fieldtype": "Data",
+   "label": "HS Description"
+  },
+  {
+   "fieldname": "is_hazardous_",
+   "fieldtype": "Select",
+   "label": "Is Hazardous ",
+   "options": "\nYes\nNo"
+  },
+  {
+   "default": "LT",
+   "fieldname": "job_type_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Job Type Id",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "Air Import\nAir Export\nSea Import\nSea Export\nLand Import\nLand Export",
+   "translatable": 1
+  },
+  {
+   "fieldname": "number_of_packagescontainer_pallets",
+   "fieldtype": "Data",
+   "label": "Number of packages/container/ pallets"
+  },
+  {
+   "fieldname": "operational_information",
+   "fieldtype": "Section Break",
+   "label": "Operational Information"
+  },
+  {
+   "fieldname": "operational_informations",
+   "fieldtype": "Table",
+   "label": "Operational Informations",
+   "options": "Operational"
+  },
+  {
+   "fieldname": "package_details",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Package Details"
+  },
+  {
+   "fieldname": "package_information",
+   "fieldtype": "Section Break",
+   "label": "Package Information"
+  },
+  {
+   "fieldname": "package_table",
+   "fieldtype": "Table",
+   "label": "Package Table",
+   "options": "Package Details"
+  },
+  {
+   "fieldname": "place_of_delivery",
+   "fieldtype": "Data",
+   "label": "Place of Delivery"
+  },
+  {
+   "fieldname": "place_of_receipt",
+   "fieldtype": "Data",
+   "label": "Place of Receipt"
+  },
+  {
+   "fieldname": "pobl_no",
+   "fieldtype": "Data",
+   "label": "PO/BL No",
+   "translatable": 1
+  },
+  {
+   "fieldname": "pol",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "in_list_view": 1,
+   "label": "POL"
+  },
+  {
+   "fieldname": "port",
+   "fieldtype": "Link",
+   "label": "Port",
+   "options": "Port"
+  },
+  {
+   "fieldname": "quotation",
+   "fieldtype": "Link",
+   "label": "Quotation",
+   "options": "Quotation"
+  },
+  {
+   "default": "FL",
+   "fieldname": "region_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Branch Id",
+   "read_only": 1,
+   "translatable": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks"
+  },
+  {
+   "fetch_from": "customer.custom_sales_person",
+   "fetch_if_empty": 1,
+   "fieldname": "sales_executive",
+   "fieldtype": "Link",
+   "label": "Sales Executive",
+   "options": "Sales Person"
+  },
+  {
+   "fieldname": "section_break_anaqv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_gvqkc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_qltxg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "shipper",
+   "fieldtype": "Data",
+   "label": "Shipper",
+   "translatable": 1
+  },
+  {
+   "fieldname": "total_cbm",
+   "fieldtype": "Float",
+   "label": "Total CBM"
+  },
+  {
+   "fieldname": "total_cost_sar",
+   "fieldtype": "Currency",
+   "label": "Total Cost (SAR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_quantity",
+   "fieldtype": "Data",
+   "label": "Total Quantity",
+   "translatable": 1
+  },
+  {
+   "fieldname": "total_sales_sar",
+   "fieldtype": "Currency",
+   "label": "Total Sales (SAR)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_sqmtr",
+   "fieldtype": "Float",
+   "label": "Total Sqmtr"
+  },
+  {
+   "fieldname": "total_weight",
+   "fieldtype": "Float",
+   "label": "Total Weight"
+  },
+  {
+   "fieldname": "truck_no",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Truck No."
+  },
+  {
+   "fieldname": "twb_date",
+   "fieldtype": "Date",
+   "hidden": 1,
+   "label": "TWB Date"
+  },
+  {
+   "fieldname": "twb_no",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "TWB No."
+  },
+  {
+   "fieldname": "units",
+   "fieldtype": "Data",
+   "label": "Units"
+  },
+  {
+   "fieldname": "volume_cbm",
+   "fieldtype": "Data",
+   "label": "Volume (CBM)"
+  },
+  {
+   "fieldname": "volume_weight_kg",
+   "fieldtype": "Data",
+   "label": "Volume Weight (kg)"
+  },
+  {
+   "fieldname": "vouchers",
+   "fieldtype": "Tab Break",
+   "label": "Vouchers"
+  },
+  {
+   "fieldname": "vouchers2",
+   "fieldtype": "Table",
+   "label": "Vouchers",
+   "options": "Related Voucher"
   }
  ],
  "grid_page_length": 50,
@@ -94,42 +503,27 @@
    "link_fieldname": "custom_job_record"
   },
   {
-   "custom": 1,
    "link_doctype": "Stock Entry",
    "link_fieldname": "custom_job_record"
   },
   {
-   "custom": 1,
    "link_doctype": "Purchase Receipt",
    "link_fieldname": "custom_job_record"
   },
   {
-   "custom": 1,
    "link_doctype": "Delivery Note",
    "link_fieldname": "custom_job_record"
   },
   {
-   "custom": 1,
-   "link_doctype": "Truck Way Bill",
-   "link_fieldname": "reference_job_record"
-  },
-  {
-   "custom": 1,
    "link_doctype": "Packing List",
    "link_fieldname": "job_record"
   },
   {
-   "custom": 1,
    "link_doctype": "Survey Report",
    "link_fieldname": "job_record"
-  },
-  {
-   "custom": 1,
-   "link_doctype": "Delivery Trip",
-   "link_fieldname": "custom_select_job"
   }
  ],
- "modified": "2025-11-22 10:48:51.126534",
+ "modified": "2025-11-27 21:14:24.798840",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Record",
