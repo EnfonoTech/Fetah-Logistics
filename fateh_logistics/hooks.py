@@ -44,9 +44,10 @@ app_license = "mit"
 
 # include js in doctype views
 doctype_js = {
-    "Purchase Order": "public/js/purchase_order.js",
-    "Sales Order": "public/js/sales_order.js",
-    "Quotation": "public/js/quotation.js"
+    # "Purchase Order": "public/js/purchase_order.js",
+    # "Sales Order": "public/js/sales_order.js",
+    # "Quotation": "public/js/quotation.js",
+    "Vehicle": "public/js/vehicle.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -144,37 +145,37 @@ doctype_js = {
 doc_events = {
 	"Expense Request": {
 		"on_update": "fateh_logistics.api.setup"
-	},
-    "Purchase Order": {
-        "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
-    },
-    "Purchase Invoice": {
-        "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
-    },
-    "Purchase Receipt": {
-        "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
-    },
-    "Sales Order": {
-        "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
-    },
-    "Sales Invoice": {
-        "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
-    },
-    "Delivery Note": {
-        "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
-        "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
-    }
+	}
+    # "Purchase Order": {
+    #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
+    # },
+    # "Purchase Invoice": {
+    #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
+    # },
+    # "Purchase Receipt": {
+    #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
+    # },
+    # "Sales Order": {
+    #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
+    # },
+    # "Sales Invoice": {
+    #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
+    # },
+    # "Delivery Note": {
+    #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",
+    #     "on_amend": "fateh_logistics.po_hooks.update_job_record_percent"
+    # }
 }
 
 # Scheduled Tasks

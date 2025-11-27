@@ -363,6 +363,109 @@ def get_items_from_multiple_quotations(quotations):
     return {"items": items}
 
 
+@frappe.whitelist()
+def get_sales_invoices_for_vehicle(vehicle):
+    """
+    Get all Sales Invoices linked to a vehicle via Sales Invoice Item custom_vehicle field.
+    Returns parent Sales Invoice details with totals.
+    """
+    if not vehicle:
+        return []
+    
+    # Query child table to find parent Sales Invoices
+    sales_invoice_items = frappe.get_all(
+        "Sales Invoice Item",
+        filters={"custom_vehicle": vehicle},
+        fields=["parent", "parenttype"],
+        distinct=True
+    )
+    
+    if not sales_invoice_items:
+        return []
+    
+    # Get unique parent Sales Invoice names
+    sales_invoice_names = [item.parent for item in sales_invoice_items if item.parenttype == "Sales Invoice"]
+    
+    if not sales_invoice_names:
+        return []
+    
+    # Get parent Sales Invoice details
+    sales_invoices = frappe.get_all(
+        "Sales Invoice",
+        filters={"name": ["in", sales_invoice_names], "docstatus": 1},
+        fields=["name", "base_grand_total", "base_total", "outstanding_amount", "currency"]
+    )
+    
+    return sales_invoices
 
 
+@frappe.whitelist()
+def get_purchase_invoices_for_vehicle(vehicle):
+    """
+    Get all Purchase Invoices linked to a vehicle via Purchase Invoice Item custom_vehicle field.
+    Returns parent Purchase Invoice details with totals.
+    """
+    if not vehicle:
+        return []
+    
+    # Query child table to find parent Purchase Invoices
+    purchase_invoice_items = frappe.get_all(
+        "Purchase Invoice Item",
+        filters={"custom_vehicle": vehicle},
+        fields=["parent", "parenttype"],
+        distinct=True
+    )
+    
+    if not purchase_invoice_items:
+        return []
+    
+    # Get unique parent Purchase Invoice names
+    purchase_invoice_names = [item.parent for item in purchase_invoice_items if item.parenttype == "Purchase Invoice"]
+    
+    if not purchase_invoice_names:
+        return []
+    
+    # Get parent Purchase Invoice details
+    purchase_invoices = frappe.get_all(
+        "Purchase Invoice",
+        filters={"name": ["in", purchase_invoice_names], "docstatus": 1},
+        fields=["name", "base_grand_total", "base_total", "outstanding_amount", "currency"]
+    )
+    
+    return purchase_invoices
 
+
+@frappe.whitelist()
+def get_journal_entries_for_vehicle(vehicle):
+    """
+    Get all Journal Entries linked to a vehicle via Journal Entry Account custom_vehicle field.
+    Returns parent Journal Entry details with total_debit and currency.
+    """
+    if not vehicle:
+        return []
+    
+    # Query child table to find parent Journal Entries
+    journal_entry_accounts = frappe.get_all(
+        "Journal Entry Account",
+        filters={"custom_vehicle": vehicle},
+        fields=["parent", "parenttype"],
+        distinct=True
+    )
+    
+    if not journal_entry_accounts:
+        return []
+    
+    # Get unique parent Journal Entry names
+    journal_entry_names = [item.parent for item in journal_entry_accounts if item.parenttype == "Journal Entry"]
+    
+    if not journal_entry_names:
+        return []
+    
+    # Get parent Journal Entry details
+    journal_entries = frappe.get_all(
+        "Journal Entry",
+        filters={"name": ["in", journal_entry_names], "docstatus": 1},
+        fields=["name", "total_debit", "total_credit", "total_amount_currency"]
+    )
+    
+    return journal_entries
