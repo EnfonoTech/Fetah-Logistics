@@ -67,6 +67,8 @@
   "operational_informations",
   "section_break_anaqv",
   "current_operational_status",
+  "job_assignment_tab",
+  "job_assignment",
   "vouchers",
   "fetch_vouchers",
   "vouchers2",
@@ -482,23 +484,32 @@
    "fieldtype": "Table",
    "label": "Vouchers",
    "options": "Related Voucher"
+  },
+  {
+   "fieldname": "job_assignment_tab",
+   "fieldtype": "Tab Break",
+   "label": "Job Assignment"
+  },
+  {
+   "allow_bulk_edit": 1,
+   "fieldname": "job_assignment",
+   "fieldtype": "Table",
+   "label": "Job Assignment",
+   "options": "Job Assignment"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [
   {
-   "group": "Details",
    "link_doctype": "Sales Invoice",
    "link_fieldname": "custom_job_record"
   },
   {
-   "group": "Details",
    "link_doctype": "Purchase Invoice",
    "link_fieldname": "custom_job_record"
   },
   {
-   "group": "Details",
    "link_doctype": "Journal Entry",
    "link_fieldname": "custom_job_record"
   },
@@ -521,9 +532,13 @@
   {
    "link_doctype": "Survey Report",
    "link_fieldname": "job_record"
+  },
+  {
+   "link_doctype": "Trip Details",
+   "link_fieldname": "job_records"
   }
  ],
- "modified": "2025-11-27 21:14:24.798840",
+ "modified": "2025-11-29 09:10:49.506139",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Record",

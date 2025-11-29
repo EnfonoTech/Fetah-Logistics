@@ -469,3 +469,487 @@ def get_journal_entries_for_vehicle(vehicle):
     )
     
     return journal_entries
+
+
+@frappe.whitelist()
+def update_driver_allowances(driver_name):
+    """
+    Sum up allowances from Trip Details and update Driver (only for internal drivers)
+    Also calculate balance (allowance - allowance_taken)
+    External drivers don't track allowances - they create Purchase Invoices from Trip Details
+    """
+    driver = frappe.get_doc("Driver", driver_name)
+    
+    # Only update allowances for internal drivers (those with employee)
+    # External drivers don't track allowances
+    if not driver.employee:
+        return {"status": "info", "message": "Allowance tracking is only for internal drivers"}
+    
+    # Get all completed trips for this driver
+    trips = frappe.get_all(
+        "Trip Details",
+        filters={
+            "driver": driver_name,
+            "status": "Trip Completed"
+        },
+        fields=["name", "allowance"]
+    )
+    
+    # Sum allowances
+    total_allowance = sum([trip.allowance or 0 for trip in trips])
+    
+    # Update Driver
+    driver.allowance = total_allowance
+    driver.allowance_balance = driver.allowance - (driver.allowance_taken or 0)
+    driver.save()
+    
+    return {"status": "success", "message": "Allowances updated"}
+
+
+@frappe.whitelist()
+def update_job_assignment_allowances(job_record_name):
+    """
+    Sum up allowances from Trip Details and update Job Assignment table
+    Also calculate balance (allowance - allowance_taken)
+    
+    This updates allowance fields in the Job Assignment child table based on completed trips
+    """
+    job_record = frappe.get_doc("Job Record", job_record_name)
+    
+    # Get all completed trips for this job record
+    trips = frappe.get_all(
+        "Trip Details",
+        filters={
+            "job_records": job_record_name,
+            "status": "Trip Completed"
+        },
+        fields=["name", "driver", "allowance"]
+    )
+    
+    # Group by driver and sum allowances
+    driver_allowances = {}
+    for trip in trips:
+        if trip.driver and trip.allowance:
+            if trip.driver not in driver_allowances:
+                driver_allowances[trip.driver] = 0
+            driver_allowances[trip.driver] += trip.allowance
+    
+    # Update Job Assignment table
+    updated = False
+    for assignment in job_record.job_assignment:
+        if assignment.driver in driver_allowances:
+            assignment.allowance = driver_allowances[assignment.driver]
+            # Calculate balance
+            assignment.allowance_balance = assignment.allowance - (assignment.allowance_taken or 0)
+            updated = True
+    
+    if updated:
+        job_record.save()
+        return {"status": "success", "message": "Allowances updated"}
+    else:
+        return {"status": "info", "message": "No allowances to update"}
+
+
+@frappe.whitelist()
+def process_driver_allowance(driver_name, amount=None):
+    """
+    Process allowance for internal driver (creates Additional Salary)
+    Note: External drivers create Purchase Invoice from Trip Details, not from here
+    
+    Args:
+        driver_name: Name of Driver (must have employee linked)
+        amount: Amount to process (if None, processes full balance)
+    """
+    driver = frappe.get_doc("Driver", driver_name)
+    
+    # Determine amount to process
+    if amount is None:
+        amount = driver.allowance_balance or driver.allowance or 0
+    else:
+        amount = float(amount)
+    
+    if amount <= 0:
+        frappe.throw("No allowance amount to process")
+    
+    available_balance = (driver.allowance_balance or driver.allowance or 0)
+    if amount > available_balance:
+        frappe.throw("Amount cannot exceed allowance balance")
+    
+    # Check driver type
+    # Only process for internal drivers (those with employee)
+    # External drivers create Purchase Invoice from Trip Details
+    if not driver.employee:
+        frappe.throw("This feature is only available for internal drivers (drivers with employee). External drivers should create Purchase Invoice from Trip Details.")
+    
+    # Internal driver - Create Additional Salary
+    result = create_additional_salary_from_driver(driver, amount)
+    
+    # Update allowance_taken and balance
+    driver.allowance_taken = (driver.allowance_taken or 0) + amount
+    driver.allowance_balance = (driver.allowance or 0) - driver.allowance_taken
+    
+    driver.save()
+    
+    return result
+
+
+@frappe.whitelist()
+def process_job_assignment_allowance(job_record_name, assignment_idx, amount=None):
+    """
+    Process allowance for a specific Job Assignment row
+    - Internal: Create Additional Salary
+    - External: Create Purchase Invoice
+    
+    DEPRECATED: Use process_driver_allowance instead
+    
+    Args:
+        job_record_name: Name of Job Record
+        assignment_idx: Index of Job Assignment row (can be string or int)
+        amount: Amount to process (if None, processes full balance)
+    """
+    # Convert assignment_idx to int if it's a string
+    try:
+        assignment_idx = int(assignment_idx)
+    except (ValueError, TypeError):
+        frappe.throw("Invalid assignment index")
+    
+    job_record = frappe.get_doc("Job Record", job_record_name)
+    
+    if assignment_idx >= len(job_record.job_assignment):
+        frappe.throw("Invalid assignment index")
+    
+    assignment = job_record.job_assignment[assignment_idx]
+    
+    if not assignment.driver:
+        frappe.throw("Driver is required")
+    
+    # Determine amount to process
+    if amount is None:
+        amount = assignment.allowance_balance or assignment.allowance or 0
+    else:
+        amount = float(amount)
+    
+    if amount <= 0:
+        frappe.throw("No allowance amount to process")
+    
+    available_balance = (assignment.allowance_balance or assignment.allowance or 0)
+    if amount > available_balance:
+        frappe.throw("Amount cannot exceed allowance balance")
+    
+    driver = frappe.get_doc("Driver", assignment.driver)
+    
+    # Check driver type
+    if assignment.driver_type == "Own" or driver.employee:
+        # Internal driver - Create Additional Salary
+        result = create_additional_salary_from_assignment(job_record, assignment, driver, amount)
+        
+        # Update allowance_taken and balance
+        assignment.allowance_taken = (assignment.allowance_taken or 0) + amount
+        assignment.allowance_balance = (assignment.allowance or 0) - assignment.allowance_taken
+        
+    else:
+        # External driver - Create Purchase Invoice
+        if not driver.transporter:
+            frappe.throw("External driver must have a transporter linked")
+        
+        result = create_purchase_invoice_from_assignment(job_record, assignment, driver, amount)
+        
+        # Update allowance_taken and balance
+        assignment.allowance_taken = (assignment.allowance_taken or 0) + amount
+        assignment.allowance_balance = (assignment.allowance or 0) - assignment.allowance_taken
+    
+    job_record.save()
+    
+    return result
+
+
+def create_additional_salary_from_driver(driver, amount):
+    """
+    Create Additional Salary for internal driver (from Driver doctype)
+    """
+    if not driver.employee:
+        frappe.throw("Driver must have an employee linked")
+    
+    employee = frappe.get_doc("Employee", driver.employee)
+    company = getattr(employee, "company", None) or frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    
+    # Get or create "Trip Allowance" salary component
+    salary_component = "Trip Allowance"
+    if not frappe.db.exists("Salary Component", salary_component):
+        component = frappe.new_doc("Salary Component")
+        component.salary_component = salary_component
+        component.type = "Earning"
+        component.insert()
+    
+    # Create Additional Salary
+    additional_salary = frappe.new_doc("Additional Salary")
+    additional_salary.employee = driver.employee
+    additional_salary.company = company
+    additional_salary.salary_component = salary_component
+    additional_salary.amount = amount
+    additional_salary.payroll_date = utils.today()
+    additional_salary.overwrite_salary_structure_amount = 0
+    additional_salary.ref_doctype = "Driver"
+    additional_salary.ref_docname = driver.name
+    
+    # Add description
+    additional_salary.description = f"Driver Allowance - {driver.full_name}"
+    
+    additional_salary.insert()
+    additional_salary.submit()
+    
+    return {
+        "status": "success",
+        "message": f"Additional Salary {additional_salary.name} created for {amount}",
+        "document": additional_salary.name,
+        "doctype": "Additional Salary"
+    }
+
+
+def create_additional_salary_from_assignment(job_record, assignment, driver, amount):
+    """
+    Create Additional Salary for internal driver (from Job Assignment - DEPRECATED)
+    """
+    if not driver.employee:
+        frappe.throw("Driver must have an employee linked")
+    
+    employee = frappe.get_doc("Employee", driver.employee)
+    company = job_record.company or frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    
+    # Get or create "Trip Allowance" salary component
+    salary_component = "Trip Allowance"
+    if not frappe.db.exists("Salary Component", salary_component):
+        component = frappe.new_doc("Salary Component")
+        component.salary_component = salary_component
+        component.type = "Earning"
+        component.insert()
+    
+    # Create Additional Salary
+    additional_salary = frappe.new_doc("Additional Salary")
+    additional_salary.employee = driver.employee
+    additional_salary.company = company
+    additional_salary.salary_component = salary_component
+    additional_salary.amount = amount
+    additional_salary.payroll_date = utils.today()
+    additional_salary.overwrite_salary_structure_amount = 0
+    additional_salary.ref_doctype = "Job Record"
+    additional_salary.ref_docname = job_record.name
+    
+    # Add description
+    additional_salary.description = f"Driver Allowance - {driver.full_name} - Job {job_record.name}"
+    
+    additional_salary.insert()
+    additional_salary.submit()
+    
+    return {
+        "status": "success",
+        "message": f"Additional Salary {additional_salary.name} created for {amount}",
+        "document": additional_salary.name,
+        "doctype": "Additional Salary"
+    }
+
+
+def create_purchase_invoice_from_driver(driver, amount):
+    """
+    Create Purchase Invoice for external driver (draft, not submitted)
+    - Links Driver in main form
+    - Sets rate in item
+    """
+    if not driver.transporter:
+        frappe.throw("External driver must have a transporter linked")
+    
+    company = frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    posting_date = utils.today()
+    
+    # Get expense account
+    expense_account = frappe.db.get_value(
+        "Company", company, "default_expense_account"
+    ) or frappe.db.get_value(
+        "Account", {"account_type": "Expense Account", "company": company}, "name"
+    )
+    
+    if not expense_account:
+        frappe.throw("Please set default expense account for company")
+    
+    # Get or create service item
+    service_item = "Driver Service"
+    if not frappe.db.exists("Item", service_item):
+        try:
+            item = frappe.new_doc("Item")
+            item.item_code = service_item
+            item.item_name = "Driver Service"
+            item.item_group = "Services"
+            item.is_stock_item = 0
+            item.is_service_item = 1
+            item.insert()
+        except frappe.DuplicateEntryError:
+            # Item was created by another process, just use it
+            pass
+    
+    # Create Purchase Invoice (draft, not submitted)
+    pi = frappe.new_doc("Purchase Invoice")
+    pi.company = company
+    pi.supplier = driver.transporter
+    pi.posting_date = posting_date
+    # Set Driver in main form (custom_driver field)
+    pi.custom_driver = driver.name
+    
+    # Create item row with rate
+    item_row = {
+        "item_code": service_item,
+        "qty": 1,
+        "rate": amount,
+        "expense_account": expense_account
+    }
+    
+    pi.append("items", item_row)
+    
+    pi.set_missing_values()
+    pi.insert()
+    # Do not submit - return draft document
+    
+    return {
+        "status": "success",
+        "message": f"Purchase Invoice {pi.name} created (draft) for {amount}",
+        "document": pi.name,
+        "doctype": "Purchase Invoice"
+    }
+
+
+def create_purchase_invoice_from_assignment(job_record, assignment, driver, amount):
+    """
+    Create Purchase Invoice for external driver (draft, not submitted)
+    - Links Job Record in main form
+    - Links Vehicle in item row
+    - Sets rate in item
+    
+    DEPRECATED: Use create_purchase_invoice_from_driver instead
+    """
+    if not driver.transporter:
+        frappe.throw("External driver must have a transporter linked")
+    
+    company = job_record.company or frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    posting_date = utils.today()
+    
+    # Get expense account
+    expense_account = frappe.db.get_value(
+        "Company", company, "default_expense_account"
+    ) or frappe.db.get_value(
+        "Account", {"account_type": "Expense Account", "company": company}, "name"
+    )
+    
+    if not expense_account:
+        frappe.throw("Please set default expense account for company")
+    
+    # Get or create service item
+    service_item = "Driver Service"
+    if not frappe.db.exists("Item", service_item):
+        try:
+            item = frappe.new_doc("Item")
+            item.item_code = service_item
+            item.item_name = "Driver Service"
+            item.item_group = "Services"
+            item.is_stock_item = 0
+            item.is_service_item = 1
+            item.insert()
+        except frappe.DuplicateEntryError:
+            # Item was created by another process, just use it
+            pass
+    
+    # Get vehicle from assignment
+    vehicle = assignment.vehicle if assignment else None
+    
+    # Create Purchase Invoice (draft, not submitted)
+    pi = frappe.new_doc("Purchase Invoice")
+    pi.company = company
+    pi.supplier = driver.transporter
+    pi.posting_date = posting_date
+    # Set Job Record in main form (custom_job_record field)
+    pi.custom_job_record = job_record.name
+    
+    # Create item row with vehicle and rate
+    item_row = {
+        "item_code": service_item,
+        "qty": 1,
+        "rate": amount,
+        "expense_account": expense_account
+    }
+    
+    # Set vehicle in item row if available
+    if vehicle:
+        item_row["custom_vehicle"] = vehicle
+    
+    pi.append("items", item_row)
+    
+    pi.set_missing_values()
+    pi.insert()
+    # Do not submit - return draft document
+    
+    return {
+        "status": "success",
+        "message": f"Purchase Invoice {pi.name} created (draft) for {amount}",
+        "document": pi.name,
+        "doctype": "Purchase Invoice"
+    }
+
+
+@frappe.whitelist()
+def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None):
+    """Filter drivers based on driver_type (Own/External)"""
+    # Handle filters - can be passed as dict or string
+    if isinstance(filters, str):
+        import json
+        try:
+            filters = json.loads(filters)
+        except:
+            filters = {}
+    
+    if not filters:
+        filters = {}
+    
+    # Get driver_type from filters dict
+    driver_type = None
+    if isinstance(filters, dict):
+        driver_type = filters.get("driver_type")
+    
+    if driver_type == "Own":
+        # Own drivers: employee field is not empty and not null
+        return frappe.db.sql("""
+            SELECT name 
+            FROM `tabDriver`
+            WHERE employee IS NOT NULL 
+            AND employee != ''
+            AND name LIKE %(txt)s
+            ORDER BY name
+            LIMIT %(start)s, %(page_len)s
+        """, {
+            "txt": f"%{txt}%",
+            "start": start,
+            "page_len": page_len
+        }, as_list=True)
+    elif driver_type == "External":
+        # External drivers: employee field is empty or null
+        return frappe.db.sql("""
+            SELECT name 
+            FROM `tabDriver`
+            WHERE (employee IS NULL OR employee = '')
+            AND name LIKE %(txt)s
+            ORDER BY name
+            LIMIT %(start)s, %(page_len)s
+        """, {
+            "txt": f"%{txt}%",
+            "start": start,
+            "page_len": page_len
+        }, as_list=True)
+    else:
+        # No filter - return all drivers
+        return frappe.get_all(
+            "Driver",
+            filters={
+                "name": ["like", f"%{txt}%"]
+            },
+            fields=["name"],
+            limit_start=start,
+            limit_page_length=page_len,
+            as_list=True
+        )

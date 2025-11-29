@@ -26,7 +26,10 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/fateh_logistics/css/fateh_logistics.css"
-# app_include_js = "/assets/fateh_logistics/js/fateh_logistics.js"
+app_include_js = [
+    "assets/fateh_logistics/js/driver_quick_entry.js",
+    "assets/fateh_logistics/js/vehicle_quick_entry.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/fateh_logistics/css/fateh_logistics.css"
@@ -47,7 +50,8 @@ doctype_js = {
     # "Purchase Order": "public/js/purchase_order.js",
     # "Sales Order": "public/js/sales_order.js",
     # "Quotation": "public/js/quotation.js",
-    "Vehicle": "public/js/vehicle.js"
+    "Vehicle": "public/js/vehicle.js",
+    "Driver": "public/js/driver.js"
 }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -292,8 +296,12 @@ fixtures = [
     {
         "dt": "Role",
         "filters": [
-           ["role_name", "in", ["Operations Executive", "Warehouse Executive"]]
+            ["role_name", "in", ["Operations Executive", "Warehouse Executive"]]
         ]
+    },
+    {
+        "dt": "Vehicle Type"
     }
 ]
+
 

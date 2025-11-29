@@ -1,0 +1,172 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "format:TRIP-{####}",
+ "creation": "2025-09-15 08:57:14.836460",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "job_details_section",
+  "job_records",
+  "vehicle",
+  "driver",
+  "start_datetime",
+  "pickup_date_time",
+  "loading_place",
+  "column_break_htvi",
+  "posting_date",
+  "status",
+  "end_datetime",
+  "delivery_date_time",
+  "unloading_place",
+  "section_break_sbrj",
+  "allowance",
+  "custom_purchase_invoice_status",
+  "custom_purchase_invoice",
+  "column_break_xhow",
+  "vehicle_revenue"
+ ],
+ "fields": [
+  {
+   "fieldname": "job_details_section",
+   "fieldtype": "Section Break",
+   "label": "Job Details"
+  },
+  {
+   "fieldname": "job_records",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Job Records",
+   "options": "Job Record"
+  },
+  {
+   "fieldname": "vehicle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Vehicle",
+   "options": "Vehicle"
+  },
+  {
+   "fieldname": "start_datetime",
+   "fieldtype": "Datetime",
+   "label": "Start Date Time"
+  },
+  {
+   "fieldname": "column_break_htvi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Driver",
+   "options": "Driver"
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "\nPending\nTrip Started\nIn Progress\nTrip Completed\nCancelled"
+  },
+  {
+   "fieldname": "end_datetime",
+   "fieldtype": "Datetime",
+   "label": "End Date Time"
+  },
+  {
+   "fieldname": "pickup_date_time",
+   "fieldtype": "Datetime",
+   "label": "Pickup Date Time"
+  },
+  {
+   "fieldname": "loading_place",
+   "fieldtype": "Data",
+   "label": "Loading Place"
+  },
+  {
+   "fieldname": "delivery_date_time",
+   "fieldtype": "Datetime",
+   "label": "Delivery Date Time"
+  },
+  {
+   "fieldname": "unloading_place",
+   "fieldtype": "Data",
+   "label": "Unloading Place"
+  },
+  {
+   "fieldname": "section_break_sbrj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "allowance",
+   "fieldtype": "Currency",
+   "label": "Allowance"
+  },
+  {
+   "fieldname": "custom_purchase_invoice_status",
+   "fieldtype": "Data",
+   "label": "Purchase Invoice Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "custom_purchase_invoice",
+   "fieldtype": "Link",
+   "label": "Purchase Invoice",
+   "options": "Purchase Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_xhow",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "vehicle_revenue",
+   "fieldtype": "Currency",
+   "label": "Vehicle Revenue"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Purchase",
+   "link_doctype": "Purchase Invoice",
+   "link_fieldname": "custom_trip_details"
+  }
+ ],
+ "modified": "2025-11-29 10:40:39.439312",
+ "modified_by": "Administrator",
+ "module": "Fateh Logistics",
+ "name": "Trip Details",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

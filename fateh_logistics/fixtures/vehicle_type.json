@@ -1,0 +1,170 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:01:13.786792",
+  "name": "Truck 5 Mtr Closed",
+  "vehicle_type": "Truck 5 Mtr Closed"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:23.864679",
+  "name": "Tail Lift Dyna",
+  "vehicle_type": "Tail Lift Dyna"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:23.960380",
+  "name": "Boom Truck 6 Mtr",
+  "vehicle_type": "Boom Truck 6 Mtr"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:23.978732",
+  "name": "Dyna Reefer",
+  "vehicle_type": "Dyna Reefer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:23.993068",
+  "name": "Crane 50 Ton",
+  "vehicle_type": "Crane 50 Ton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.004097",
+  "name": "Dyna",
+  "vehicle_type": "Dyna"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.014680",
+  "name": "Boom Truck 3 Mtr",
+  "vehicle_type": "Boom Truck 3 Mtr"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.026866",
+  "name": "Truck 6 Mtr/Fsr Box",
+  "vehicle_type": "Truck 6 Mtr/Fsr Box"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.040674",
+  "name": "Forklift 3 Ton",
+  "vehicle_type": "Forklift 3 Ton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.059839",
+  "name": "Forklift 5 Ton",
+  "vehicle_type": "Forklift 5 Ton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.072449",
+  "name": "Forklift 7 Ton",
+  "vehicle_type": "Forklift 7 Ton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.126476",
+  "name": "Forklift 16 Ton",
+  "vehicle_type": "Forklift 16 Ton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.148518",
+  "name": "Truck",
+  "vehicle_type": "Truck"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.160159",
+  "name": "Lowbed Trailer",
+  "vehicle_type": "Lowbed Trailer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.170912",
+  "name": "Crane 25 Ton",
+  "vehicle_type": "Crane 25 Ton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.183336",
+  "name": "Truck 6 Mtr/Fsr",
+  "vehicle_type": "Truck 6 Mtr/Fsr"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.196913",
+  "name": "Dyna Box",
+  "vehicle_type": "Dyna Box"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.214653",
+  "name": "Curtain Side Trailer",
+  "vehicle_type": "Curtain Side Trailer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.222905",
+  "name": "Flatbed Trailer",
+  "vehicle_type": "Flatbed Trailer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.231991",
+  "name": "Reefer Trailer",
+  "vehicle_type": "Reefer Trailer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.242013",
+  "name": "Pickup",
+  "vehicle_type": "Pickup"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.258509",
+  "name": "FTR",
+  "vehicle_type": "FTR"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.268916",
+  "name": "Recovery Truck",
+  "vehicle_type": "Recovery Truck"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Vehicle Type",
+  "modified": "2025-11-29 09:14:24.278876",
+  "name": "Flatbed Trailer Side Body",
+  "vehicle_type": "Flatbed Trailer Side Body"
+ }
+]
