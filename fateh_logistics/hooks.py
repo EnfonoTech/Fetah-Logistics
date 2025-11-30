@@ -284,24 +284,32 @@ fixtures = [
     "Workflow", 
     "Workflow State", 
     "Workflow Action Master",
+
     "Client Script",
     "Server Script",
-    "Property Setter",
+
+    {
+        "dt": "Property Setter",
+        "filters": [
+            ["module", "=", "Fateh Logistics"]
+        ]
+    },
+
     {
         "dt": "Custom Field",
         "filters": [
             ["module", "=", "Fateh Logistics"]
         ]
     },
+
     {
         "dt": "Role",
         "filters": [
-            ["role_name", "in", ["Operations Executive", "Warehouse Executive"]]
+            ["name", "in", ["Operations Executive", "Warehouse Executive"]]
         ]
     },
+
     {
         "dt": "Vehicle Type"
     }
 ]
-
-

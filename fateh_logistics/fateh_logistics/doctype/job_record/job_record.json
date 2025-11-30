@@ -68,6 +68,7 @@
   "section_break_anaqv",
   "current_operational_status",
   "job_assignment_tab",
+  "total_trip_amount",
   "job_assignment",
   "vouchers",
   "fetch_vouchers",
@@ -496,6 +497,11 @@
    "fieldtype": "Table",
    "label": "Job Assignment",
    "options": "Job Assignment"
+  },
+  {
+   "fieldname": "total_trip_amount",
+   "fieldtype": "Currency",
+   "label": "Total Trip Amount"
   }
  ],
  "grid_page_length": 50,
@@ -538,7 +544,7 @@
    "link_fieldname": "job_records"
   }
  ],
- "modified": "2025-11-29 09:10:49.506139",
+ "modified": "2025-11-30 10:58:57.329475",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Record",

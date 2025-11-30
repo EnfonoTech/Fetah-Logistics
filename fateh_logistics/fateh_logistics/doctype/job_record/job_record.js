@@ -1,420 +1,320 @@
-// Copyright (c) 2025, siva@enfono.in and contributors
-// For license information, please see license.txt
-
 frappe.ui.form.on("Job Record", {
-    onload: function (frm) {
+
+    onload(frm) {
+
         frm.events.load_quotation(frm);
-        
-        // Set query filter for driver field based on driver_type (row-specific)
-        // This is set once and will dynamically read driver_type from the row
-        frm.set_query('driver', 'job_assignment', function(doc, cdt, cdn) {
+
+        frm.set_query('driver', 'job_assignment', (doc, cdt, cdn) => {
             const row = locals[cdt][cdn];
-            
             if (row.driver_type === 'Own') {
-                // Own drivers: employee field must be set (not null and not empty)
                 return {
                     query: 'fateh_logistics.api.get_drivers_by_type',
-                    filters: {
-                        driver_type: 'Own'
-                    }
-                };
-            } else if (row.driver_type === 'External') {
-                // External drivers: employee field must be empty or null
-                return {
-                    query: 'fateh_logistics.api.get_drivers_by_type',
-                    filters: {
-                        driver_type: 'External'
-                    }
+                    filters: { driver_type: 'Own' }
                 };
             }
-            // If no driver_type selected, show all drivers
+            if (row.driver_type === 'External') {
+                return {
+                    query: 'fateh_logistics.api.get_drivers_by_type',
+                    filters: { driver_type: 'External' }
+                };
+            }
             return {};
         });
 
-        // Set query filter for vehicle field based on driver_type (row-specific)
-        frm.set_query('vehicle', 'job_assignment', function(doc, cdt, cdn) {
+        frm.set_query('vehicle', 'job_assignment', (doc, cdt, cdn) => {
             const row = locals[cdt][cdn];
-            
-            if (row.driver_type === 'Own') {
-                // Own drivers: show only internal vehicles
-                return {
-                    filters: {
-                        custom_is_external: 'Internal'
-                    }
-                };
-            } else if (row.driver_type === 'External') {
-                // External drivers: show only external vehicles
-                return {
-                    filters: {
-                        custom_is_external: 'External'
-                    }
-                };
-            }
-            // If no driver_type selected, show all vehicles
+            if (row.driver_type === 'Own') return { filters: { custom_is_external: 'Internal' } };
+            if (row.driver_type === 'External') return { filters: { custom_is_external: 'External' } };
             return {};
         });
     },
-    customer: function (frm) {
-        if (frm.is_new() && frm.doc.customer) {
-            frm.add_custom_button(__('Get Items from Quotation'), () => {
-                frappe.call({
-                    method: 'fateh_logistics.api.get_quotations_for_customer',
-                    args: {
-                        customer: frm.doc.customer
-                    },
-                    callback: function (r) {
-                        const quotations = r.message || [];
-                        if (!quotations.length) {
-                            frappe.msgprint(__('No submitted quotations found for this customer.'));
-                            return;
-                        }
 
-                        const dialog = new frappe.ui.Dialog({
-                            title: __('Select Quotations'),
-                            fields: [
-                                {
-                                    fieldname: 'quotation_table_wrapper',
-                                    fieldtype: 'HTML',
-                                }
-                            ],
-                            primary_action_label: __('Get Items'),
-                            primary_action() {
-                                const selected = Array.from(dialog.$wrapper.find('.quotation-checkbox:checked'))
-                                    .map(el => el.dataset.quotation);
+    customer(frm) {
 
-                                if (!selected.length) {
-                                    frappe.msgprint(__('Please select at least one quotation.'));
-                                    return;
-                                }
+        frm.clear_custom_buttons();
 
-                                frappe.call({
-                                    method: 'fateh_logistics.api.get_items_from_multiple_quotations',
-                                    args: {
-                                        quotations: selected
-                                    },
-                                    callback: function (r) {
-                                        if (r.message && r.message.items) {
-                                            frm.clear_table('items');
-                                            (r.message.items || []).forEach(q_item => {
-                                                let item_row = frm.add_child("items");
-                                                item_row.item = q_item.item_code;
-                                                item_row.item_name = q_item.item_name;
-                                                item_row.uom = q_item.uom;
-                                                item_row.quantity = q_item.qty;
-                                                item_row.rate = q_item.rate;
-                                                item_row.amount = q_item.amount;
-                                                item_row.from_quotation = q_item.parent;
-                                            });
-                                            frm.refresh_field('items');
-                                            frm.events.update_totals(frm);
-                                            dialog.hide();
-                                        }
-                                    }
-                                });
+        if (!frm.is_new() || !frm.doc.customer) return;
+
+        frm.add_custom_button(__('Get Items from Quotation'), () => {
+
+            frappe.call({
+                method: 'fateh_logistics.api.get_quotations_for_customer',
+                args: { customer: frm.doc.customer },
+
+                callback(r) {
+
+                    const quotations = r.message || [];
+
+                    if (!quotations.length) {
+                        frappe.msgprint(__('No submitted quotations found for this customer.'));
+                        return;
+                    }
+
+                    const dialog = new frappe.ui.Dialog({
+                        title: __('Select Quotations'),
+                        fields: [{ fieldname: 'quotation_table_wrapper', fieldtype: 'HTML' }],
+                        primary_action_label: __('Get Items'),
+
+                        primary_action() {
+
+                            const selected = dialog.$wrapper
+                                .find('.quotation-checkbox:checked')
+                                .map((i, el) => el.dataset.quotation)
+                                .get();
+
+                            if (!selected.length) {
+                                frappe.msgprint(__('Please select at least one quotation.'));
+                                return;
                             }
-                        });
-                        dialog.show();
 
-                        const table_html = `
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th><input type="checkbox" id="select-all-quotations" title="Select All" /></th>
-                                        <th>Quotation</th>
-                                        <th>Grand Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${quotations.map(q => `
-                                        <tr>
-                                            <td><input type="checkbox" class="quotation-checkbox" data-quotation="${q.name}"></td>
-                                            <td>${q.name}</td>
-                                            <td style="text-align:right;">${frappe.format(q.grand_total, { fieldtype: 'Currency' })}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        `;
-
-                        dialog.fields_dict.quotation_table_wrapper.$wrapper.html(table_html);
-                        dialog.$wrapper.find('#select-all-quotations').on('change', function () {
-                            const checked = $(this).is(':checked');
-                            dialog.$wrapper.find('.quotation-checkbox').prop('checked', checked);
-                        });
-                        dialog.$wrapper.on('change', '.quotation-checkbox', function () {
-                            const total = dialog.$wrapper.find('.quotation-checkbox').length;
-                            const checked = dialog.$wrapper.find('.quotation-checkbox:checked').length;
-                            dialog.$wrapper.find('#select-all-quotations').prop('checked', total === checked);
-                        });
-                    }
-                });
-            });
-        }
-    },
-
-    refresh: function (frm) {
-        // Test: Show alert to verify refresh is called
-        if (!frm.is_new() && window.location.search.indexOf('test=1') > -1) {
-            frappe.show_alert({message: "Job Record refresh called", indicator: "blue"}, 3);
-        }
-        
-        if (!frm.is_new()) {
-            // Add custom buttons first (these should always show)
-            frm.add_custom_button(__('View Trips'), function() {
-                frappe.set_route("List", "Trip Details", { job_records: frm.doc.name });
-            }, __("View"));
-
-
-            // First check if "Expense Entry" doctype exists
-            frappe.model.with_doctype("Expense Entry", function() {
-                // Doctype exists, proceed with API call
-                frappe.call({
-                    method: "fateh_logistics.api.get_expense_entries_for_job",
-                    args: {
-                        job_record_id: frm.doc.name
-                    },
-                    callback: function(r) {
-                        if (r.message) {
-                            let total_expenses = 0;
-                            frm.clear_table("expenses");
-                            r.message.forEach(function(row) {
-                                let child = frm.add_child("expenses");
-                                child.reference_doctype = row.reference_doctype;
-                                child.reference_record = row.reference_record;
-                                child.amount = row.amount;
-                                total_expenses += row.amount;
-                            });
-                            frm.refresh_field("expenses");
-                            frm.set_value("total_expense", total_expenses)
-
-                            setTimeout(function() {
-                                frm.doc.__unsaved = 0;
-                                frm.page.clear_indicator();
-                            }, 100);
-                        }
-                    }
-                });
-            }, function() {
-                // Doctype does not exist
-                frappe.msgprint(__('Expense Entry is not available on this site.'));
-            });
-            
-            // Set dashboard indicators - run after client scripts have finished
-            // Client scripts run after doctype JS, so we need to wait longer
-            // Hook into form-render-complete event and also use multiple timeouts
-            $(frm.wrapper).one('render_complete', function() {
-                setTimeout(function() {
-                    if (!frm.is_customizing() && frm.dashboard) {
-                        frm.events.set_dashboard_indicators(frm);
-                    }
-                }, 2500);
-            });
-            
-            // Also hook into dashboard after_refresh if available
-            if (frm.dashboard) {
-                var original_after_refresh = frm.dashboard.after_refresh;
-                frm.dashboard.after_refresh = function() {
-                    if (original_after_refresh) {
-                        original_after_refresh.apply(this, arguments);
-                    }
-                    setTimeout(function() {
-                        if (!frm.is_customizing() && frm.dashboard) {
-                            frm.events.set_dashboard_indicators(frm);
-                        }
-                    }, 500);
-                };
-            }
-            
-            // Fallback: Try multiple times with increasing delays (after client scripts)
-            [3000, 4000, 5000, 6000].forEach(function(delay) {
-                setTimeout(function() {
-                    if (!frm.is_customizing() && frm.dashboard) {
-                        frm.events.set_dashboard_indicators(frm);
-                    }
-                }, delay);
-            });
-        }
-    },
-
-    set_dashboard_indicators: function (frm) {
-        // Don't clear dashboard - let client scripts add their indicators too
-        // Only add our indicators if dashboard exists
-        if (!frm.dashboard) {
-            return;
-        }
-        
-        // Get currency - use default if not in doc
-        var currency = frm.doc.currency || frappe.defaults.get_default("currency") || "SAR";
-        
-        function process_invoices(invoices, includeOutstanding = false) {
-            var totals = { grandTotal: 0, outstandingTotal: 0 };
-            if (invoices && invoices.length > 0) {
-                invoices.forEach(function (invoice) {
-                    totals.grandTotal += invoice.base_grand_total || 0;
-                    if (includeOutstanding) {
-                        totals.outstandingTotal += invoice.outstanding_amount || 0;
-                    }
-                });
-            }
-            return totals;
-        }
-
-        function process_journal_entries(entries) {
-            var total = 0;
-            if (entries && entries.length > 0) {
-                entries.forEach(function (entry) {
-                    total += entry.total || 0;
-                });
-            }
-            return total;
-        }
-
-        frappe.call({
-            method: 'frappe.client.get_list',
-            args: {
-                doctype: 'Sales Invoice',
-                filters: {
-                    custom_job_record: frm.doc.name,
-                    docstatus: 1
-                },
-                fields: ['base_grand_total', 'outstanding_amount']
-            },
-            callback: function (response) {
-                var salesInvoiceTotals = process_invoices(response.message, true);
-
-                frappe.call({
-                    method: 'frappe.client.get_list',
-                    args: {
-                        doctype: 'Purchase Invoice',
-                        filters: {
-                            custom_job_record: frm.doc.name,
-                            docstatus: 1
-                        },
-                        fields: ['base_grand_total', 'outstanding_amount']
-                    },
-                    callback: function (response) {
-                        var purchaseInvoiceTotals = process_invoices(response.message, true);
-
-                        // Try Expense Entry first, fallback to Journal Entry if it doesn't exist
-                        frappe.model.with_doctype("Expense Entry", function() {
-                            // Expense Entry exists
                             frappe.call({
-                                method: 'frappe.client.get_list',
-                                args: {
-                                    doctype: 'Expense Entry',
-                                    filters: {
-                                        custom_job_record: frm.doc.name,
-                                        docstatus: 1,
-                                        status: "Approved"
-                                    },
-                                    fields: ['total']
-                                },
-                                callback: function (response) {
-                                    var journalEntryTotalDebit = process_journal_entries(response.message || []);
-                                    frm.events.add_indicators_to_dashboard(frm, salesInvoiceTotals, purchaseInvoiceTotals, journalEntryTotalDebit, currency);
-                                },
-                                error: function(r) {
-                                    // Fallback to Journal Entry
-                                    frm.events.fetch_journal_entries(frm, salesInvoiceTotals, purchaseInvoiceTotals, currency);
+                                method: 'fateh_logistics.api.get_items_from_multiple_quotations',
+                                args: { quotations: selected },
+
+                                callback(res) {
+
+                                    if (!res.message || !res.message.items) return;
+
+                                    frm.clear_table('items');
+
+                                    res.message.items.forEach(item => {
+                                        let row = frm.add_child("items");
+                                        row.item = item.item_code;
+                                        row.item_name = item.item_name;
+                                        row.uom = item.uom;
+                                        row.quantity = item.qty;
+                                        row.rate = item.rate;
+                                        row.amount = item.amount;
+                                        row.from_quotation = item.parent;
+                                    });
+
+                                    frm.refresh_field('items');
+                                    frm.events.update_totals(frm);
+                                    dialog.hide();
                                 }
                             });
-                        }, function() {
-                            // Expense Entry doesn't exist, use Journal Entry
-                            frm.events.fetch_journal_entries(frm, salesInvoiceTotals, purchaseInvoiceTotals, currency);
-                        });
-                    },
-                    error: function(r) {
-                        // Error fetching Purchase Invoice
-                    }
-                });
-            },
-            error: function(r) {
-                // Error fetching Sales Invoice
-            }
-        });
-    },
-    
-    // Helper function to fetch Journal Entries
-    fetch_journal_entries: function(frm, salesInvoiceTotals, purchaseInvoiceTotals, currency) {
-        frappe.call({
-            method: 'frappe.client.get_list',
-            args: {
-                doctype: 'Journal Entry',
-                filters: {
-                    custom_job_record: frm.doc.name,
-                    docstatus: 1
-                },
-                fields: ['total_debit']
-            },
-            callback: function (response) {
-                var journalEntryTotalDebit = 0;
-                if (response.message && response.message.length > 0) {
-                    response.message.forEach(function(entry) {
-                        journalEntryTotalDebit += entry.total_debit || 0;
+                        }
+                    });
+
+                    dialog.show();
+
+                    const table_html = `
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-quotations"></th>
+                                    <th>Quotation</th>
+                                    <th>Grand Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${quotations.map(q => `
+                                    <tr>
+                                        <td><input type="checkbox" class="quotation-checkbox" data-quotation="${q.name}"></td>
+                                        <td>${q.name}</td>
+                                        <td style="text-align:right;">${frappe.format(q.grand_total, { fieldtype: 'Currency' })}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+
+                    dialog.fields_dict.quotation_table_wrapper.$wrapper.html(table_html);
+
+                    dialog.$wrapper.find('#select-all-quotations').on('change', function () {
+                        dialog.$wrapper.find('.quotation-checkbox').prop('checked', this.checked);
                     });
                 }
-                frm.events.add_indicators_to_dashboard(frm, salesInvoiceTotals, purchaseInvoiceTotals, journalEntryTotalDebit, currency);
-            },
-            error: function(r) {
-                // Still add indicators with 0 expenses
-                frm.events.add_indicators_to_dashboard(frm, salesInvoiceTotals, purchaseInvoiceTotals, 0, currency);
-            }
+            });
         });
     },
-    
-    // Helper function to add indicators to dashboard
-    add_indicators_to_dashboard: function(frm, salesInvoiceTotals, purchaseInvoiceTotals, journalEntryTotalDebit, currency) {
-        var totalExpenses = purchaseInvoiceTotals.grandTotal + journalEntryTotalDebit;
-        var profitAndLoss = salesInvoiceTotals.grandTotal - totalExpenses;
 
-        // Ensure dashboard still exists (might have been cleared)
-        if (!frm.dashboard) {
-            // Try to get dashboard again
-            if (frm.$wrapper && frm.$wrapper.find('.form-dashboard').length) {
-                // Dashboard element exists, try again after a moment
-                setTimeout(function() {
-                    if (frm.dashboard) {
-                        frm.events.add_indicators_to_dashboard(frm, salesInvoiceTotals, purchaseInvoiceTotals, journalEntryTotalDebit, currency);
+    refresh(frm) {
+
+        if (frm.is_new()) return;
+
+        frm.add_custom_button(__('View Trips'), () => {
+            frappe.set_route("List", "Trip Details", { job_records: frm.doc.name });
+        }, __("View"));
+
+        frm.add_custom_button(__('Create Trip Details'), function () {
+
+            let pending_rows = (frm.doc.job_assignment || [])
+                .filter(r => r.trip_detail_status === "Pending");
+
+            if (!pending_rows.length) {
+                frappe.msgprint("No Pending Trips Found.");
+                return;
+            }
+
+            const required_fields = {
+                driver: "Driver",
+                vehicle: "Vehicle",
+                trip_amount: "Trip Amount"
+            };
+
+            let errors = [];
+
+            pending_rows.forEach(row => {
+                let rn = row.idx || "?";
+                Object.keys(required_fields).forEach(field => {
+                    if (!row[field]) {
+                        errors.push(`Row ${rn}: Missing ${required_fields[field]}`);
                     }
-                }, 200);
-            }
-            return;
-        }
-        
-        try {
-            // Add indicators one by one to catch any errors
-            if (salesInvoiceTotals.grandTotal > 0 || purchaseInvoiceTotals.grandTotal > 0 || journalEntryTotalDebit > 0) {
-                frm.dashboard.add_indicator(
-                    __('Total Sales: {0}', [format_currency(salesInvoiceTotals.grandTotal, currency)]),
-                    'blue'
-                );
-                
-                frm.dashboard.add_indicator(
-                    __('Total Purchase: {0}', [format_currency(purchaseInvoiceTotals.grandTotal, currency)]),
-                    'orange'
-                );
-                
-                frm.dashboard.add_indicator(
-                    __('Other Expenses: {0}', [format_currency(journalEntryTotalDebit, currency)]),
-                    'purple'
-                );
+                });
+            });
 
-                let stat = profitAndLoss >= 0 ? 'Profit' : 'Loss'
-                frm.dashboard.add_indicator(
-                    __('{0}: {1}', [stat, format_currency(profitAndLoss, currency)]),
-                    profitAndLoss >= 0 ? 'green' : 'red'
-                );
+            if (errors.length) {
+                frappe.msgprint({ title: "Validation Errors", indicator: "red", message: errors.join("<br>") });
+                return;
             }
-        } catch (e) {
-            // Error adding dashboard indicators
-        }
+
+            function create_trip(index) {
+
+                if (index >= pending_rows.length) {
+
+                    frm.save().then(() => {
+                        frappe.msgprint("All Trips Created Successfully");
+                        frm.reload_doc();
+                    });
+
+                    return;
+                }
+
+                let row = pending_rows[index];
+
+                frappe.call({
+                    method: 'fateh_logistics.api.create_trip_details',
+                    args: {
+                        job_record: frm.doc.name,
+                        job_assignment: row.name,   
+                        driver: row.driver,
+                        vehicle: row.vehicle,
+                        trip_amount: row.trip_amount,
+                        allowance: row.allowance || 0
+                    },
+                    callback(r) {
+
+                        if (!r.message) {
+                            frappe.msgprint("Trip created but server did not return any ID.");
+                            return;
+                        }
+                    
+                        row.__creating_trip = true;
+                    
+                        frappe.model.set_value(row.doctype, row.name, "trip_detail_status", "Created");
+                    
+                        frappe.show_alert({
+                            message: __('Trip Created: ' + r.message.trip_name),
+                            indicator: 'green'
+                        }, 5);
+                    
+                        setTimeout(() => { delete row.__creating_trip; }, 500);
+                    
+                        if (index === pending_rows.length - 1) {
+                            frm.save().then(() => {
+                                frappe.set_route("Form", "Trip Details", r.message.trip_name);
+
+                            });
+                        }
+                    
+                        create_trip(index + 1);
+                    }
+                    
+                });
+                
+            }
+
+            create_trip(0);
+        });
+
+        frappe.model.with_doctype("Expense Entry", () => {
+
+            frappe.call({
+                method: "fateh_logistics.api.get_expense_entries_for_job",
+                args: { job_record_id: frm.doc.name },
+
+                callback(r) {
+
+                    if (!r.message) return;
+
+                    let total = 0;
+                    frm.clear_table("expenses");
+
+                    r.message.forEach(row => {
+                        let child = frm.add_child("expenses");
+                        child.reference_doctype = row.reference_doctype;
+                        child.reference_record = row.reference_record;
+                        child.amount = row.amount;
+                        total += row.amount;
+                    });
+
+                    frm.refresh_field("expenses");
+                    frm.set_value("total_expense", total);
+
+                    setTimeout(() => {
+                        frm.doc.__unsaved = 0;
+                        frm.page.clear_indicator();
+                    }, 100);
+                }
+            });
+        });
+
+        setTimeout(() => {
+            if (frm.dashboard) frm.events.set_dashboard_indicators(frm);
+        }, 2000);
     },
 
-    update_totals: function (frm) {
+    set_dashboard_indicators(frm) {
+
+        if (!frm.dashboard) return;
+
+        const currency = frm.doc.currency || frappe.defaults.get_default("currency") || "SAR";
+
+        function sum(rows, key) {
+            return (rows || []).reduce((a, r) => a + (r[key] || 0), 0);
+        }
+
+        frappe.client.get_list('Sales Invoice', {
+            filters: { custom_job_record: frm.doc.name, docstatus: 1 },
+            fields: ['base_grand_total']
+        }).then(salesRes => {
+
+            const sales = sum(salesRes, 'base_grand_total');
+
+            frappe.client.get_list('Purchase Invoice', {
+                filters: { custom_job_record: frm.doc.name, docstatus: 1 },
+                fields: ['base_grand_total']
+            }).then(purchaseRes => {
+
+                const purchase = sum(purchaseRes, 'base_grand_total');
+
+                frappe.client.get_list('Expense Entry', {
+                    filters: { custom_job_record: frm.doc.name, docstatus: 1, status: 'Approved' },
+                    fields: ['total']
+                }).then(expRes => {
+
+                    const other = sum(expRes, 'total');
+                    const profit = sales - (purchase + other);
+
+                    frm.dashboard.add_indicator(`Sales: ${format_currency(sales, currency)}`, "blue");
+                    frm.dashboard.add_indicator(`Purchase: ${format_currency(purchase, currency)}`, "orange");
+                    frm.dashboard.add_indicator(`Other Expenses: ${format_currency(other, currency)}`, "purple");
+                    frm.dashboard.add_indicator(
+                        `${profit >= 0 ? 'Profit' : 'Loss'}: ${format_currency(profit, currency)}`,
+                        profit >= 0 ? "green" : "red"
+                    );
+                });
+            });
+        });
+    },
+
+    update_totals(frm) {
+
         let total_qty = 0;
         let total_amt = 0;
 
-        frm.doc.items.forEach(row => {
+        (frm.doc.items || []).forEach(row => {
             total_qty += flt(row.quantity);
             total_amt += flt(row.amount);
         });
@@ -423,152 +323,187 @@ frappe.ui.form.on("Job Record", {
         frm.set_value('total_amount', total_amt);
     },
 
-    load_quotation: function(frm) {
-        if (frm.is_new() && frm.doc.quotation) {
-            frappe.db.get_doc("Quotation", frm.doc.quotation)
-                .then(quotation => {
-                    if (quotation.quotation_to === "Customer") {
-                        frm.set_value("customer", quotation.party_name);
-                    }
-                    frm.clear_table("items");
-                    (quotation.items || []).forEach(q_item => {
-                        let item_row = frm.add_child("items");
-                        item_row.item = q_item.item_code;
-                        item_row.item_name = q_item.item_name;
-                        item_row.uom = q_item.uom;
-                        item_row.quantity = q_item.qty;
-                        item_row.rate = q_item.rate;
-                        item_row.amount = q_item.amount;
-                        item_row.from_quotation = q_item.parent;
-                    });
-                    frm.refresh_field("items");
-                    frm.events.update_totals(frm);
-                });
-        }
+    load_quotation(frm) {
+
+        if (!frm.is_new() || !frm.doc.quotation) return;
+
+        frappe.db.get_doc("Quotation", frm.doc.quotation).then(q => {
+
+            frm.set_value("customer", q.party_name);
+            frm.clear_table("items");
+
+            (q.items || []).forEach(i => {
+                let row = frm.add_child("items");
+                row.item = i.item_code;
+                row.item_name = i.item_name;
+                row.uom = i.uom;
+                row.quantity = i.qty;
+                row.rate = i.rate;
+                row.amount = i.amount;
+                row.from_quotation = i.parent;
+            });
+
+            frm.refresh_field("items");
+            frm.events.update_totals(frm);
+        });
     }
+
 });
 
 
 frappe.ui.form.on('Job Item Detail', {
-    item: async function (frm, cdt, cdn) {
+
+    async item(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
         if (!row.item) return;
+
         frappe.model.set_value(cdt, cdn, 'quantity', 1);
 
-        try {
-            let r = await frappe.db.get_value('Item Price', {
-                item_code: row.item,
-                price_list: 'Standard Selling'
-            }, 'price_list_rate');
+        const r = await frappe.db.get_value(
+            'Item Price',
+            { item_code: row.item, price_list: 'Standard Selling' },
+            'price_list_rate'
+        );
 
-            if (r && r.message) {
-                frappe.model.set_value(cdt, cdn, 'rate', r.message.price_list_rate);
-                frappe.model.set_value(cdt, cdn, 'amount', r.message.price_list_rate * row.quantity);
-            } else {
-                frappe.model.set_value(cdt, cdn, 'rate', 0);
-                frappe.msgprint(__('No Standard Selling price found for item {0}', [row.item]));
-            }
-        } catch (err) {
-            // Error fetching price
-            frappe.msgprint(__('Error fetching price for item {0}', [row.item]));
-        }
+        let rate = r.message ? r.message.price_list_rate : 0;
 
+        frappe.model.set_value(cdt, cdn, 'rate', rate);
+        frappe.model.set_value(cdt, cdn, 'amount', rate);
         frm.events.update_totals(frm);
     },
 
-    quantity: function (frm, cdt, cdn) {
-        row = locals[cdt][cdn];
-
-        if (row.quantity && row.rate) {
-            frappe.model.set_value(cdt, cdn, "amount", row.quantity * row.rate)
-        }
-
+    quantity(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        frappe.model.set_value(cdt, cdn, "amount", row.quantity * row.rate);
         frm.events.update_totals(frm);
-        
     },
 
-    rate: function (frm, cdt, cdn) {
-        row = locals[cdt][cdn];
-
-        if (row.quantity && row.rate) {
-            frappe.model.set_value(cdt, cdn, "amount", row.quantity * row.rate)
-        }
-
+    rate(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        frappe.model.set_value(cdt, cdn, "amount", row.quantity * row.rate);
         frm.events.update_totals(frm);
-        
     },
 
-    items_remove: function (frm) {
+    items_remove(frm) {
         frm.events.update_totals(frm);
     }
 });
+
 
 frappe.ui.form.on('Job Assignment', {
-    driver_type: function(frm, cdt, cdn) {
-        const row = locals[cdt][cdn];
-        
-        // Clear driver if it doesn't match the selected driver_type
-        if (row.driver && row.driver_type) {
-            frappe.db.get_value('Driver', row.driver, 'employee').then(driver_res => {
-                const has_employee = driver_res.message.employee;
-                if ((row.driver_type === 'Own' && !has_employee) || 
-                    (row.driver_type === 'External' && has_employee)) {
-                    frappe.model.set_value(cdt, cdn, 'driver', '');
-                    frappe.model.set_value(cdt, cdn, 'vehicle', '');
-                }
-            });
+
+    trip_amount(frm, cdt, cdn) {
+
+        let row = locals[cdt][cdn];
+        let amount = flt(row.trip_amount) || 0;
+        let allowance = amount * 0.075;
+
+        frappe.model.set_value(cdt, cdn, 'allowance', allowance);
+
+        if (!row.__creating_trip) {
+            frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
         }
-        
-        // Clear vehicle if it doesn't match the selected driver_type
-        if (row.vehicle && row.driver_type) {
-            frappe.db.get_value('Vehicle', row.vehicle, 'custom_is_external').then(vehicle_res => {
-                const vehicle_type = vehicle_res.message.custom_is_external;
-                if ((row.driver_type === 'Own' && vehicle_type !== 'Internal') || 
-                    (row.driver_type === 'External' && vehicle_type !== 'External')) {
-                    frappe.model.set_value(cdt, cdn, 'vehicle', '');
-                }
-            });
-        }
-        
-        // Clear driver field when driver_type changes so user can select from filtered list
-        frappe.model.set_value(cdt, cdn, 'driver', '');
-        // Don't clear vehicle here - let the check above handle it based on vehicle type
     },
-    
-    driver: function(frm, cdt, cdn) {
+
+    driver_type(frm, cdt, cdn) {
+
+        let row = locals[cdt][cdn];
+
+        if (!row.__creating_trip) {
+            frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
+        }
+
+        // Reset always
+        frappe.model.set_value(cdt, cdn, 'driver', '');
+        frappe.model.set_value(cdt, cdn, 'vehicle', '');
+
+    },
+
+    driver(frm, cdt, cdn) {
+
         const row = locals[cdt][cdn];
 
-        if (row.driver) {
-            frappe.db.get_value('Driver', row.driver, ['employee', 'transporter']).then(driver_res => {
-                const employee_id = driver_res.message.employee;
-                
-                // Auto-set driver_type based on employee if not already set
-                if (employee_id && !row.driver_type) {
-                    frappe.model.set_value(cdt, cdn, 'driver_type', 'Own');
-                } else if (!employee_id && !row.driver_type) {
-                    frappe.model.set_value(cdt, cdn, 'driver_type', 'External');
-                }
-                
-                // If driver_type is Own, get vehicle for employee
-                if (employee_id && row.driver_type === 'Own') {
-                    frappe.db.get_list('Vehicle', {
-                        filters: { employee: employee_id },
-                        fields: ['name'],
-                        limit: 1
-                    }).then(vehicle_res => {
-                        if (vehicle_res.length) {
-                            frappe.model.set_value(cdt, cdn, 'vehicle', vehicle_res[0].name);
-                        } else {
-                            frappe.model.set_value(cdt, cdn, 'vehicle', '');
-                        }
-                    });
-                } else if (row.driver_type === 'External') {
+        if (!row.__creating_trip) {
+            frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
+        }
+
+        if (!row.driver) {
+            frappe.model.set_value(cdt, cdn, 'vehicle', '');
+            frappe.model.set_value(cdt, cdn, 'transporter', '');
+            return;
+        }
+
+        frappe.db.get_value('Driver', row.driver, ['employee', 'transporter']).then(r => {
+
+            const employee = r.message.employee;
+            const transporter = r.message.transporter;
+
+            // AUTO DETECT DRIVER TYPE
+            if (employee) {
+                frappe.model.set_value(cdt, cdn, 'driver_type', 'Own');
+            } else {
+                frappe.model.set_value(cdt, cdn, 'driver_type', 'External');
+            }
+
+            // SET TRANSPORTER IF EXTERNAL DRIVER
+            if (!employee && transporter) {
+                frappe.model.set_value(cdt, cdn, 'transporter', transporter);
+            } else {
+                frappe.model.set_value(cdt, cdn, 'transporter', '');
+            }
+
+          
+            if (employee) {
+                frappe.db.get_list('Vehicle', {
+                    filters: { employee: employee },
+                    fields: ['name'],
+                    limit: 1
+                }).then(v => {
+                    frappe.model.set_value(cdt, cdn, 'vehicle', v.length ? v[0].name : '');
+                });
+            }
+
+            if (!employee && transporter) {
+                frappe.db.get_list('Vehicle', {
+                    filters: { custom_transporter: transporter },
+                    fields: ['name'],
+                    limit: 1
+                }).then(v => {
+
+                    frappe.model.set_value(cdt, cdn, 'vehicle', v.length ? v[0].name : '');
+
+                    if (!v.length) {
+                        frappe.msgprint(__('No vehicle linked to this transporter'));
+                    }
+
+                });
+            }
+
+        });
+
+    },
+
+    vehicle(frm, cdt, cdn) {
+
+        let row = locals[cdt][cdn];
+
+        if (!row.__creating_trip) {
+            frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
+        }
+
+        if (row.vehicle && row.driver_type) {
+            frappe.db.get_value('Vehicle', row.vehicle, 'custom_is_external').then(r => {
+                const type = r.message.custom_is_external;
+
+                if (
+                    (row.driver_type === 'Own' && type !== 'Internal') ||
+                    (row.driver_type === 'External' && type !== 'External')
+                ) {
+                    frappe.msgprint("Vehicle does not match Driver Type");
                     frappe.model.set_value(cdt, cdn, 'vehicle', '');
                 }
             });
-        } else {
-            frappe.model.set_value(cdt, cdn, 'vehicle', '');
         }
     }
-});
 
+});

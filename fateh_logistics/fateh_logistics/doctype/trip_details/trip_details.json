@@ -71,7 +71,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "\nPending\nTrip Started\nIn Progress\nTrip Completed\nCancelled"
+   "options": "Pending\nCreated\nIn Progress\nTrip Completed\nCancelled"
   },
   {
    "fieldname": "end_datetime",
@@ -145,7 +145,7 @@
    "link_fieldname": "custom_trip_details"
   }
  ],
- "modified": "2025-11-29 10:40:39.439312",
+ "modified": "2025-11-30 11:28:49.035526",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Trip Details",

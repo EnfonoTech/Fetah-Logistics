@@ -953,3 +953,59 @@ def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None
             limit_page_length=page_len,
             as_list=True
         )
+
+@frappe.whitelist()
+def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount, allowance=0):
+
+    allowance = float(allowance or 0)
+    trip_amount = float(trip_amount or 0)
+
+   
+    trip = frappe.new_doc("Trip Details")
+    trip.job_records = job_record
+    trip.driver = driver
+    trip.vehicle = vehicle
+    trip.trip_amount = trip_amount
+    trip.allowance = allowance
+    trip.status = "Created"
+    trip.insert(ignore_permissions=True)
+
+    frappe.db.set_value("Job Assignment", job_assignment, "trip_detail_status", "Created")
+
+
+    driver_doc = frappe.get_doc("Driver", driver)
+
+    if not driver_doc.employee:
+
+        if not driver_doc.transporter:
+            frappe.throw("Transporter not linked in Driver master.")
+
+        ITEM = "Service Transportation"
+        supplier = driver_doc.transporter
+        company = frappe.defaults.get_user_default("Company")
+
+       
+        pi = frappe.new_doc("Purchase Invoice")
+        pi.company = company
+        pi.supplier = supplier
+        pi.posting_date = frappe.utils.today()
+        pi.bill_date = frappe.utils.today()
+        pi.custom_job_record = trip.job_records
+
+        pi.append("items", {
+            "item_code": ITEM,
+            "qty": 1,
+            "rate": allowance,
+            "amount": allowance
+        })
+
+        pi.insert(ignore_permissions=True)
+
+        frappe.db.set_value("Purchase Invoice", pi.name, "custom_trip_details", trip.name, update_modified=False)
+        frappe.db.set_value("Trip Details", trip.name, "custom_purchase_invoice", pi.name, update_modified=False)
+        frappe.db.set_value("Trip Details", trip.name, "custom_purchase_invoice_status", "Created", update_modified=False)
+
+
+    return {
+        "trip_name": trip.name
+    }
