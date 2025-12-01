@@ -32,3 +32,4 @@ frappe.query_reports["Vehicle Driver Assignment"] = {
     ]
 };
 
+

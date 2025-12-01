@@ -475,7 +475,8 @@ def get_journal_entries_for_vehicle(vehicle):
 def update_driver_allowances(driver_name):
     """
     Sum up allowances from Trip Details and update Driver (only for internal drivers)
-    Also calculate balance (allowance - allowance_taken)
+    Calculate allowance_taken from Additional Salary records
+    Calculate balance (allowance - allowance_taken)
     External drivers don't track allowances - they create Purchase Invoices from Trip Details
     """
     driver = frappe.get_doc("Driver", driver_name)
@@ -495,12 +496,27 @@ def update_driver_allowances(driver_name):
         fields=["name", "allowance"]
     )
     
-    # Sum allowances
+    # Sum allowances from trips
     total_allowance = sum([trip.allowance or 0 for trip in trips])
+    
+    # Calculate allowance_taken from Additional Salary records
+    # Get all submitted Additional Salary records linked to this driver
+    additional_salaries = frappe.get_all(
+        "Additional Salary",
+        filters={
+            "ref_doctype": "Driver",
+            "ref_docname": driver_name,
+            "docstatus": 1  # Only submitted records
+        },
+        fields=["name", "amount"]
+    )
+    
+    # Sum amounts from Additional Salary records
+    total_allowance_taken = sum([sal.amount or 0 for sal in additional_salaries])
     
     # Update Driver
     driver.allowance = total_allowance
-    driver.allowance_balance = driver.allowance - (driver.allowance_taken or 0)
+    driver.allowance_balance = total_allowance - total_allowance_taken
     driver.save()
     
     return {"status": "success", "message": "Allowances updated"}
@@ -562,18 +578,51 @@ def process_driver_allowance(driver_name, amount=None):
     """
     driver = frappe.get_doc("Driver", driver_name)
     
+    # Refresh driver to get latest allowance
+    driver.reload()
+    
+    # Calculate current allowance from trips
+    trips = frappe.get_all(
+        "Trip Details",
+        filters={
+            "driver": driver_name,
+            "status": "Trip Completed"
+        },
+        fields=["name", "allowance"]
+    )
+    current_allowance = sum([trip.allowance or 0 for trip in trips])
+    
+    # Calculate current allowance_taken from Additional Salary records
+    additional_salaries = frappe.get_all(
+        "Additional Salary",
+        filters={
+            "ref_doctype": "Driver",
+            "ref_docname": driver_name,
+            "docstatus": 1  # Only submitted records
+        },
+        fields=["name", "amount"]
+    )
+    current_allowance_taken = sum([sal.amount or 0 for sal in additional_salaries])
+    
+    # Calculate current balance
+    current_balance = current_allowance - current_allowance_taken
+    
     # Determine amount to process
     if amount is None:
-        amount = driver.allowance_balance or driver.allowance or 0
+        amount = current_balance
     else:
         amount = float(amount)
     
     if amount <= 0:
         frappe.throw("No allowance amount to process")
     
-    available_balance = (driver.allowance_balance or driver.allowance or 0)
-    if amount > available_balance:
-        frappe.throw("Amount cannot exceed allowance balance")
+    # Allow small tolerance for rounding differences (0.01)
+    if amount > current_balance + 0.01:
+        frappe.throw(f"Amount ({amount}) cannot exceed allowance balance ({current_balance:.2f})")
+    
+    # If amount is slightly more than balance due to rounding, use balance
+    if amount > current_balance:
+        amount = current_balance
     
     # Check driver type
     # Only process for internal drivers (those with employee)
@@ -584,9 +633,14 @@ def process_driver_allowance(driver_name, amount=None):
     # Internal driver - Create Additional Salary
     result = create_additional_salary_from_driver(driver, amount)
     
-    # Update allowance_taken and balance
-    driver.allowance_taken = (driver.allowance_taken or 0) + amount
-    driver.allowance_balance = (driver.allowance or 0) - driver.allowance_taken
+    # Update allowance and balance after creating Additional Salary
+    # Recalculate allowance_taken (now includes the new Additional Salary)
+    new_allowance_taken = current_allowance_taken + amount
+    new_allowance_balance = current_allowance - new_allowance_taken
+    
+    # Update driver with new values
+    driver.allowance = current_allowance
+    driver.allowance_balance = new_allowance_balance
     
     driver.save()
     
