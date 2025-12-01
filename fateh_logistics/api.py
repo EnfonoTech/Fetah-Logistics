@@ -514,10 +514,10 @@ def update_driver_allowances(driver_name):
     # Sum amounts from Additional Salary records
     total_allowance_taken = sum([sal.amount or 0 for sal in additional_salaries])
     
-    # Update Driver
-    driver.allowance = total_allowance
-    driver.allowance_balance = total_allowance - total_allowance_taken
-    driver.save()
+    # Update Driver - only update allowance_balance (allowance field doesn't exist)
+    # Use frappe.db.set_value to safely set the field
+    frappe.db.set_value("Driver", driver_name, "allowance_balance", total_allowance - total_allowance_taken)
+    frappe.db.commit()
     
     return {"status": "success", "message": "Allowances updated"}
 
@@ -633,16 +633,14 @@ def process_driver_allowance(driver_name, amount=None):
     # Internal driver - Create Additional Salary
     result = create_additional_salary_from_driver(driver, amount)
     
-    # Update allowance and balance after creating Additional Salary
+    # Update allowance_balance after creating Additional Salary
     # Recalculate allowance_taken (now includes the new Additional Salary)
     new_allowance_taken = current_allowance_taken + amount
     new_allowance_balance = current_allowance - new_allowance_taken
     
-    # Update driver with new values
-    driver.allowance = current_allowance
-    driver.allowance_balance = new_allowance_balance
-    
-    driver.save()
+    # Update driver with new balance (allowance field doesn't exist, only allowance_balance)
+    frappe.db.set_value("Driver", driver_name, "allowance_balance", new_allowance_balance)
+    frappe.db.commit()
     
     return result
 
