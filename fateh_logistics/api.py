@@ -697,12 +697,22 @@ def process_job_assignment_allowance(job_record_name, assignment_idx, amount=Non
     if amount > available_balance:
         frappe.throw("Amount cannot exceed allowance balance")
     
-    driver = frappe.get_doc("Driver", assignment.driver)
+    # Get driver data using db.get_value to avoid loading full document
+    driver_employee, driver_full_name, driver_transporter = frappe.db.get_value(
+        "Driver", 
+        assignment.driver, 
+        ["employee", "full_name", "transporter"]
+    )
     
     # Check driver type
-    if assignment.driver_type == "Own" or driver.employee:
+    if assignment.driver_type == "Own" or driver_employee:
         # Internal driver - Create Additional Salary
-        result = create_additional_salary_from_assignment(job_record, assignment, driver, amount)
+        # Create a minimal driver-like object for the function
+        driver_data = frappe._dict({
+            "employee": driver_employee,
+            "full_name": driver_full_name or assignment.driver
+        })
+        result = create_additional_salary_from_assignment(job_record, assignment, driver_data, amount)
         
         # Update allowance_taken and balance
         assignment.allowance_taken = (assignment.allowance_taken or 0) + amount
@@ -710,10 +720,14 @@ def process_job_assignment_allowance(job_record_name, assignment_idx, amount=Non
         
     else:
         # External driver - Create Purchase Invoice
-        if not driver.transporter:
+        if not driver_transporter:
             frappe.throw("External driver must have a transporter linked")
         
-        result = create_purchase_invoice_from_assignment(job_record, assignment, driver, amount)
+        # Create a minimal driver-like object for the function
+        driver_data = frappe._dict({
+            "transporter": driver_transporter
+        })
+        result = create_purchase_invoice_from_assignment(job_record, assignment, driver_data, amount)
         
         # Update allowance_taken and balance
         assignment.allowance_taken = (assignment.allowance_taken or 0) + amount
@@ -1045,15 +1059,20 @@ def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount
     frappe.db.set_value("Job Assignment", job_assignment, "trip_detail_status", "Created")
 
 
-    driver_doc = frappe.get_doc("Driver", driver)
+    # Get driver data using db.get_value to avoid loading full document
+    driver_employee, driver_transporter = frappe.db.get_value(
+        "Driver", 
+        driver, 
+        ["employee", "transporter"]
+    )
 
-    if not driver_doc.employee:
+    if not driver_employee:
 
-        if not driver_doc.transporter:
+        if not driver_transporter:
             frappe.throw("Transporter not linked in Driver master.")
 
         ITEM = "Service Transportation"
-        supplier = driver_doc.transporter
+        supplier = driver_transporter
         company = frappe.defaults.get_user_default("Company")
 
        
