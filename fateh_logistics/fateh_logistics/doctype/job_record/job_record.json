@@ -244,13 +244,11 @@
   {
    "fieldname": "eta",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "ETA"
   },
   {
    "fieldname": "etd",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "ETD"
   },
   {
@@ -544,7 +542,7 @@
    "link_fieldname": "job_records"
   }
  ],
- "modified": "2025-11-30 10:58:57.329475",
+ "modified": "2025-12-01 14:31:58.394504",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Record",

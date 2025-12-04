@@ -1000,13 +1000,19 @@ def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None
     
     if driver_type == "Own":
         # Own drivers: employee field is not empty and not null
+        # Search by both name and full_name for better usability
         return frappe.db.sql("""
-            SELECT name 
+            SELECT name, full_name
             FROM `tabDriver`
             WHERE employee IS NOT NULL 
             AND employee != ''
-            AND name LIKE %(txt)s
-            ORDER BY name
+            AND (name LIKE %(txt)s OR full_name LIKE %(txt)s)
+            ORDER BY 
+                CASE 
+                    WHEN name LIKE %(txt)s THEN 0
+                    ELSE 1
+                END,
+                name
             LIMIT %(start)s, %(page_len)s
         """, {
             "txt": f"%{txt}%",
@@ -1015,12 +1021,18 @@ def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None
         }, as_list=True)
     elif driver_type == "External":
         # External drivers: employee field is empty or null
+        # Search by both name and full_name for better usability
         return frappe.db.sql("""
-            SELECT name 
+            SELECT name, full_name
             FROM `tabDriver`
             WHERE (employee IS NULL OR employee = '')
-            AND name LIKE %(txt)s
-            ORDER BY name
+            AND (name LIKE %(txt)s OR full_name LIKE %(txt)s)
+            ORDER BY 
+                CASE 
+                    WHEN name LIKE %(txt)s THEN 0
+                    ELSE 1
+                END,
+                name
             LIMIT %(start)s, %(page_len)s
         """, {
             "txt": f"%{txt}%",
