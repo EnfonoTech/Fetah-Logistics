@@ -28,6 +28,13 @@
   "attentions",
   "pobl_no",
   "blawb_no",
+  "allowance_amount",
+  "section_break_mvga",
+  "job_assignment",
+  "invoice_details_section",
+  "total_trip_amount",
+  "invoice_item",
+  "invoice_status",
   "additional_info",
   "truck_no",
   "place_of_receipt",
@@ -68,8 +75,6 @@
   "section_break_anaqv",
   "current_operational_status",
   "job_assignment_tab",
-  "total_trip_amount",
-  "job_assignment",
   "vouchers",
   "fetch_vouchers",
   "vouchers2",
@@ -487,6 +492,7 @@
   {
    "fieldname": "job_assignment_tab",
    "fieldtype": "Tab Break",
+   "hidden": 1,
    "label": "Job Assignment"
   },
   {
@@ -500,6 +506,39 @@
    "fieldname": "total_trip_amount",
    "fieldtype": "Currency",
    "label": "Total Trip Amount"
+  },
+  {
+   "fieldname": "section_break_mvga",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "invoice_details_section",
+   "fieldtype": "Section Break",
+   "label": "Invoice Details"
+  },
+  {
+   "fieldname": "invoice_item",
+   "fieldtype": "Table",
+   "label": "Invoice Item",
+   "options": "Invoice Item"
+  },
+  {
+   "default": "Invoice Not Created",
+   "fieldname": "invoice_status",
+   "fieldtype": "Select",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Invoice Status",
+   "options": "Invoice Not Created\nInvoice Created"
+  },
+  {
+   "default": "0.075",
+   "fieldname": "allowance_amount",
+   "fieldtype": "Float",
+   "hidden": 1,
+   "label": "Allowance Amount"
   }
  ],
  "grid_page_length": 50,
@@ -542,7 +581,7 @@
    "link_fieldname": "job_records"
   }
  ],
- "modified": "2025-12-01 14:31:58.394504",
+ "modified": "2025-12-20 15:17:54.606799",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Record",
