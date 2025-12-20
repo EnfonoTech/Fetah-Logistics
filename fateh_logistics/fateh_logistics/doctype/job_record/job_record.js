@@ -149,8 +149,7 @@ frappe.ui.form.on("Job Record", {
 
             const required_fields = {
                 driver: "Driver",
-                vehicle: "Vehicle",
-                trip_amount: "Trip Amount"
+                vehicle: "Vehicle"
             };
 
             let errors = [];
@@ -191,7 +190,8 @@ frappe.ui.form.on("Job Record", {
                         driver: row.driver,
                         vehicle: row.vehicle,
                         trip_amount: row.trip_amount,
-                        allowance: row.allowance || 0
+                        allowance: row.allowance || 0,
+                        vehicle_revenue: row.vehicle_revenue || 0
                     },
                     callback(r) {
 
@@ -396,10 +396,13 @@ frappe.ui.form.on('Job Assignment', {
 
         let row = locals[cdt][cdn];
         let amount = flt(row.trip_amount) || 0;
-        let allowance = amount * 0.075;
-
+    
+        let allowance_rate = flt(frm.doc.allowance_amount) || 0;
+    
+        let allowance = amount * allowance_rate;
+    
         frappe.model.set_value(cdt, cdn, 'allowance', allowance);
-
+    
         if (!row.__creating_trip) {
             frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
         }
@@ -506,4 +509,162 @@ frappe.ui.form.on('Job Assignment', {
         }
     }
 
+});
+
+
+frappe.ui.form.on("Job Record", {
+
+    refresh(frm) {
+        if (frm.doc.__islocal) return;
+
+        if (frm.doc.invoice_status === "Invoice Created") {
+            return;
+        }
+
+        frm.add_custom_button("Create Sales Invoice", () => {
+            frm.events.create_sales_invoice(frm);
+        });
+    },
+
+    async create_sales_invoice(frm) {
+
+        const existing_invoice = await frappe.db.get_list("Sales Invoice", {
+            filters: {
+                custom_job_record: frm.doc.name
+            },
+            fields: ["name", "docstatus"],
+            limit: 1
+        });
+
+        if (existing_invoice.length && existing_invoice[0].docstatus !== 2) {
+            frappe.msgprint({
+                title: __("Duplicate Invoice"),
+                message: __("A Sales Invoice already exists for this Job Record."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        if (!frm.doc.invoice_item || !frm.doc.invoice_item.length) {
+            frappe.msgprint({
+                title: __("No Items"),
+                message: __("Please add at least one row in <b>Invoice Items</b>."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        if (!frm.doc.company) {
+            frappe.msgprint({
+                title: __("Missing Company"),
+                message: __("Company is required in Job Record."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        if (!frm.doc.customer) {
+            frappe.msgprint({
+                title: __("Missing Customer"),
+                message: __("Customer is required in Job Record."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        const templates = await frappe.db.get_list(
+            "Sales Taxes and Charges Template",
+            {
+                filters: {
+                    company: frm.doc.company,
+                    is_default: 1,
+                    disabled: 0
+                },
+                fields: ["name"],
+                limit: 1
+            }
+        );
+
+        if (!templates.length) {
+            frappe.msgprint({
+                title: __("VAT Not Configured"),
+                message: __("No default Sales Taxes and Charges Template found for this Company."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        const tax_template = templates[0].name;
+
+        const template_doc = await frappe.db.get_doc(
+            "Sales Taxes and Charges Template",
+            tax_template
+        );
+
+        if (!template_doc.taxes || !template_doc.taxes.length) {
+            frappe.msgprint({
+                title: __("VAT Template Error"),
+                message: __("Default Sales Tax Template has no tax rows."),
+                indicator: "red"
+            });
+            return;
+        }
+
+        const taxes = template_doc.taxes.map(t => ({
+            charge_type: t.charge_type,
+            account_head: t.account_head,
+            description: t.description,
+            rate: t.rate,
+            included_in_print_rate: t.included_in_print_rate || 0
+        }));
+
+        const items = frm.doc.invoice_item.map(row => {
+            if (!row.item || !row.qty || !row.rate) {
+                frappe.throw(__("Item, Qty and Rate are mandatory in Invoice Items"));
+            }
+
+            return {
+                item_code: row.item,
+                qty: row.qty,
+                rate: row.rate,
+                custom_container_no: frm.doc.custom_container_no
+            };
+        });
+
+        frappe.call({
+            method: "frappe.client.insert",
+            args: {
+                doc: {
+                    doctype: "Sales Invoice",
+                    company: frm.doc.company,
+                    customer: frm.doc.customer,
+                    cost_center: frm.doc.branch,
+                    posting_date: frappe.datetime.get_today(),
+                    custom_job_record: frm.doc.name,
+
+                    taxes_and_charges: tax_template,
+                    taxes: taxes,
+                    items: items
+                }
+            },
+            callback(r) {
+                if (!r.exc) {
+
+                    frappe.db.set_value(
+                        "Job Record",
+                        frm.doc.name,
+                        "invoice_status",
+                        "Invoice Created"
+                    );
+
+                    frappe.msgprint({
+                        message: __("Sales Invoice created successfully (Draft)"),
+                        indicator: "green"
+                    });
+
+                    frappe.set_route("Form", "Sales Invoice", r.message.name);
+                }
+            }
+        });
+    }
 });

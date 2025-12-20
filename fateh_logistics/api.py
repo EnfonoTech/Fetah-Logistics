@@ -955,10 +955,11 @@ def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None
         )
 
 @frappe.whitelist()
-def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount, allowance=0):
+def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount, allowance=0,vehicle_revenue=0):
 
     allowance = float(allowance or 0)
     trip_amount = float(trip_amount or 0)
+    vehicle_revenue = float(vehicle_revenue or 0)
 
    
     trip = frappe.new_doc("Trip Details")
@@ -967,6 +968,7 @@ def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount
     trip.vehicle = vehicle
     trip.trip_amount = trip_amount
     trip.allowance = allowance
+    trip.vehicle_revenue = vehicle_revenue
     trip.status = "Created"
     trip.insert(ignore_permissions=True)
 

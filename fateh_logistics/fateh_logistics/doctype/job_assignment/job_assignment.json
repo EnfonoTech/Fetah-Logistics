@@ -9,13 +9,14 @@
   "driver_type",
   "driver",
   "trip_amount",
-  "driver_contact_number",
+  "vehicle",
   "model",
   "remarks",
   "column_break_voxy",
   "driver_name",
-  "vehicle",
+  "driver_contact_number",
   "allowance",
+  "vehicle_revenue",
   "pickup_time",
   "container_number",
   "trip_detail_status"
@@ -101,8 +102,7 @@
    "fieldname": "trip_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Trip Amount",
-   "reqd": 1
+   "label": "Trip Amount"
   },
   {
    "fieldname": "trip_detail_status",
@@ -110,12 +110,19 @@
    "label": "Trip Detail Status",
    "options": "Pending\nCreated",
    "read_only": 1
+  },
+  {
+   "allow_in_quick_entry": 1,
+   "fieldname": "vehicle_revenue",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Vehicle Revenue"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-11-30 14:55:08.464518",
+ "modified": "2025-12-20 14:58:21.496631",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Assignment",
