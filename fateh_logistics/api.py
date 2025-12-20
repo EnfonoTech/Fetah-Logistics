@@ -475,14 +475,16 @@ def get_journal_entries_for_vehicle(vehicle):
 def update_driver_allowances(driver_name):
     """
     Sum up allowances from Trip Details and update Driver (only for internal drivers)
-    Also calculate balance (allowance - allowance_taken)
+    Calculate allowance_taken from Additional Salary records
+    Calculate balance (allowance - allowance_taken)
     External drivers don't track allowances - they create Purchase Invoices from Trip Details
     """
-    driver = frappe.get_doc("Driver", driver_name)
+    # Check if driver has employee (internal driver) - use db.get_value to avoid loading full doc
+    employee = frappe.db.get_value("Driver", driver_name, "employee")
     
     # Only update allowances for internal drivers (those with employee)
     # External drivers don't track allowances
-    if not driver.employee:
+    if not employee:
         return {"status": "info", "message": "Allowance tracking is only for internal drivers"}
     
     # Get all completed trips for this driver
@@ -495,13 +497,28 @@ def update_driver_allowances(driver_name):
         fields=["name", "allowance"]
     )
     
-    # Sum allowances
+    # Sum allowances from trips
     total_allowance = sum([trip.allowance or 0 for trip in trips])
     
-    # Update Driver
-    driver.allowance = total_allowance
-    driver.allowance_balance = driver.allowance - (driver.allowance_taken or 0)
-    driver.save()
+    # Calculate allowance_taken from Additional Salary records
+    # Get all submitted Additional Salary records linked to this driver
+    additional_salaries = frappe.get_all(
+        "Additional Salary",
+        filters={
+            "ref_doctype": "Driver",
+            "ref_docname": driver_name,
+            "docstatus": 1  # Only submitted records
+        },
+        fields=["name", "amount"]
+    )
+    
+    # Sum amounts from Additional Salary records
+    total_allowance_taken = sum([sal.amount or 0 for sal in additional_salaries])
+    
+    # Update Driver - only update allowance_balance (allowance field doesn't exist)
+    # Use frappe.db.set_value to safely set the field
+    frappe.db.set_value("Driver", driver_name, "allowance_balance", total_allowance - total_allowance_taken)
+    frappe.db.commit()
     
     return {"status": "success", "message": "Allowances updated"}
 
@@ -560,35 +577,79 @@ def process_driver_allowance(driver_name, amount=None):
         driver_name: Name of Driver (must have employee linked)
         amount: Amount to process (if None, processes full balance)
     """
-    driver = frappe.get_doc("Driver", driver_name)
+    # Check if driver has employee (internal driver) - use db.get_value to avoid loading full doc
+    employee = frappe.db.get_value("Driver", driver_name, "employee")
+    
+    if not employee:
+        frappe.throw("This feature is only available for internal drivers (drivers with employee). External drivers should create Purchase Invoice from Trip Details.")
+    
+    # Calculate current allowance from trips
+    trips = frappe.get_all(
+        "Trip Details",
+        filters={
+            "driver": driver_name,
+            "status": "Trip Completed"
+        },
+        fields=["name", "allowance"]
+    )
+    current_allowance = sum([trip.allowance or 0 for trip in trips])
+    
+    # Calculate current allowance_taken from Additional Salary records
+    additional_salaries = frappe.get_all(
+        "Additional Salary",
+        filters={
+            "ref_doctype": "Driver",
+            "ref_docname": driver_name,
+            "docstatus": 1  # Only submitted records
+        },
+        fields=["name", "amount"]
+    )
+    current_allowance_taken = sum([sal.amount or 0 for sal in additional_salaries])
+    
+    # Calculate current balance
+    current_balance = current_allowance - current_allowance_taken
     
     # Determine amount to process
     if amount is None:
-        amount = driver.allowance_balance or driver.allowance or 0
+        amount = current_balance
     else:
         amount = float(amount)
     
     if amount <= 0:
         frappe.throw("No allowance amount to process")
     
-    available_balance = (driver.allowance_balance or driver.allowance or 0)
-    if amount > available_balance:
-        frappe.throw("Amount cannot exceed allowance balance")
+    # Allow small tolerance for rounding differences (0.01)
+    if amount > current_balance + 0.01:
+        frappe.throw(f"Amount ({amount}) cannot exceed allowance balance ({current_balance:.2f})")
     
-    # Check driver type
-    # Only process for internal drivers (those with employee)
-    # External drivers create Purchase Invoice from Trip Details
-    if not driver.employee:
-        frappe.throw("This feature is only available for internal drivers (drivers with employee). External drivers should create Purchase Invoice from Trip Details.")
+    # If amount is slightly more than balance due to rounding, use balance
+    if amount > current_balance:
+        amount = current_balance
+    
+    # Get driver details using db.get_value to avoid loading full document
+    # This prevents accessing non-existent fields like allowance_taken
+    driver_data = frappe.db.get_value(
+        "Driver", 
+        driver_name, 
+        ["employee", "full_name", "name"], 
+        as_dict=True
+    )
+    
+    if not driver_data or not driver_data.employee:
+        frappe.throw("Driver must have an employee linked")
     
     # Internal driver - Create Additional Salary
-    result = create_additional_salary_from_driver(driver, amount)
+    # Pass driver_name and employee instead of driver object to avoid loading full doc
+    result = create_additional_salary_from_driver_data(driver_name, driver_data.employee, driver_data.full_name, amount)
     
-    # Update allowance_taken and balance
-    driver.allowance_taken = (driver.allowance_taken or 0) + amount
-    driver.allowance_balance = (driver.allowance or 0) - driver.allowance_taken
+    # Update allowance_balance after creating Additional Salary
+    # Recalculate allowance_taken (now includes the new Additional Salary)
+    new_allowance_taken = current_allowance_taken + amount
+    new_allowance_balance = current_allowance - new_allowance_taken
     
-    driver.save()
+    # Update driver with new balance (allowance field doesn't exist, only allowance_balance)
+    frappe.db.set_value("Driver", driver_name, "allowance_balance", new_allowance_balance)
+    frappe.db.commit()
     
     return result
 
@@ -636,12 +697,22 @@ def process_job_assignment_allowance(job_record_name, assignment_idx, amount=Non
     if amount > available_balance:
         frappe.throw("Amount cannot exceed allowance balance")
     
-    driver = frappe.get_doc("Driver", assignment.driver)
+    # Get driver data using db.get_value to avoid loading full document
+    driver_employee, driver_full_name, driver_transporter = frappe.db.get_value(
+        "Driver", 
+        assignment.driver, 
+        ["employee", "full_name", "transporter"]
+    )
     
     # Check driver type
-    if assignment.driver_type == "Own" or driver.employee:
+    if assignment.driver_type == "Own" or driver_employee:
         # Internal driver - Create Additional Salary
-        result = create_additional_salary_from_assignment(job_record, assignment, driver, amount)
+        # Create a minimal driver-like object for the function
+        driver_data = frappe._dict({
+            "employee": driver_employee,
+            "full_name": driver_full_name or assignment.driver
+        })
+        result = create_additional_salary_from_assignment(job_record, assignment, driver_data, amount)
         
         # Update allowance_taken and balance
         assignment.allowance_taken = (assignment.allowance_taken or 0) + amount
@@ -649,10 +720,14 @@ def process_job_assignment_allowance(job_record_name, assignment_idx, amount=Non
         
     else:
         # External driver - Create Purchase Invoice
-        if not driver.transporter:
+        if not driver_transporter:
             frappe.throw("External driver must have a transporter linked")
         
-        result = create_purchase_invoice_from_assignment(job_record, assignment, driver, amount)
+        # Create a minimal driver-like object for the function
+        driver_data = frappe._dict({
+            "transporter": driver_transporter
+        })
+        result = create_purchase_invoice_from_assignment(job_record, assignment, driver_data, amount)
         
         # Update allowance_taken and balance
         assignment.allowance_taken = (assignment.allowance_taken or 0) + amount
@@ -663,14 +738,12 @@ def process_job_assignment_allowance(job_record_name, assignment_idx, amount=Non
     return result
 
 
-def create_additional_salary_from_driver(driver, amount):
+def create_additional_salary_from_driver_data(driver_name, employee_name, driver_full_name, amount):
     """
     Create Additional Salary for internal driver (from Driver doctype)
+    Uses driver_name and employee_name instead of driver object to avoid loading full document
     """
-    if not driver.employee:
-        frappe.throw("Driver must have an employee linked")
-    
-    employee = frappe.get_doc("Employee", driver.employee)
+    employee = frappe.get_doc("Employee", employee_name)
     company = getattr(employee, "company", None) or frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
     
     # Get or create "Trip Allowance" salary component
@@ -683,17 +756,17 @@ def create_additional_salary_from_driver(driver, amount):
     
     # Create Additional Salary
     additional_salary = frappe.new_doc("Additional Salary")
-    additional_salary.employee = driver.employee
+    additional_salary.employee = employee_name
     additional_salary.company = company
     additional_salary.salary_component = salary_component
     additional_salary.amount = amount
     additional_salary.payroll_date = utils.today()
     additional_salary.overwrite_salary_structure_amount = 0
     additional_salary.ref_doctype = "Driver"
-    additional_salary.ref_docname = driver.name
+    additional_salary.ref_docname = driver_name
     
     # Add description
-    additional_salary.description = f"Driver Allowance - {driver.full_name}"
+    additional_salary.description = f"Driver Allowance - {driver_full_name}"
     
     additional_salary.insert()
     additional_salary.submit()
@@ -704,6 +777,19 @@ def create_additional_salary_from_driver(driver, amount):
         "document": additional_salary.name,
         "doctype": "Additional Salary"
     }
+
+
+def create_additional_salary_from_driver(driver, amount):
+    """
+    Create Additional Salary for internal driver (from Driver doctype)
+    DEPRECATED: Use create_additional_salary_from_driver_data instead to avoid loading full driver doc
+    """
+    return create_additional_salary_from_driver_data(
+        driver.name, 
+        driver.employee, 
+        driver.full_name, 
+        amount
+    )
 
 
 def create_additional_salary_from_assignment(job_record, assignment, driver, amount):
@@ -914,13 +1000,19 @@ def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None
     
     if driver_type == "Own":
         # Own drivers: employee field is not empty and not null
+        # Search by both name and full_name for better usability
         return frappe.db.sql("""
-            SELECT name 
+            SELECT name, full_name
             FROM `tabDriver`
             WHERE employee IS NOT NULL 
             AND employee != ''
-            AND name LIKE %(txt)s
-            ORDER BY name
+            AND (name LIKE %(txt)s OR full_name LIKE %(txt)s)
+            ORDER BY 
+                CASE 
+                    WHEN name LIKE %(txt)s THEN 0
+                    ELSE 1
+                END,
+                name
             LIMIT %(start)s, %(page_len)s
         """, {
             "txt": f"%{txt}%",
@@ -929,12 +1021,18 @@ def get_drivers_by_type(doctype, txt, searchfield, start, page_len, filters=None
         }, as_list=True)
     elif driver_type == "External":
         # External drivers: employee field is empty or null
+        # Search by both name and full_name for better usability
         return frappe.db.sql("""
-            SELECT name 
+            SELECT name, full_name
             FROM `tabDriver`
             WHERE (employee IS NULL OR employee = '')
-            AND name LIKE %(txt)s
-            ORDER BY name
+            AND (name LIKE %(txt)s OR full_name LIKE %(txt)s)
+            ORDER BY 
+                CASE 
+                    WHEN name LIKE %(txt)s THEN 0
+                    ELSE 1
+                END,
+                name
             LIMIT %(start)s, %(page_len)s
         """, {
             "txt": f"%{txt}%",
@@ -975,15 +1073,20 @@ def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount
     frappe.db.set_value("Job Assignment", job_assignment, "trip_detail_status", "Created")
 
 
-    driver_doc = frappe.get_doc("Driver", driver)
+    # Get driver data using db.get_value to avoid loading full document
+    driver_employee, driver_transporter = frappe.db.get_value(
+        "Driver", 
+        driver, 
+        ["employee", "transporter"]
+    )
 
-    if not driver_doc.employee:
+    if not driver_employee:
 
-        if not driver_doc.transporter:
+        if not driver_transporter:
             frappe.throw("Transporter not linked in Driver master.")
 
         ITEM = "Service Transportation"
-        supplier = driver_doc.transporter
+        supplier = driver_transporter
         company = frappe.defaults.get_user_default("Company")
 
        
