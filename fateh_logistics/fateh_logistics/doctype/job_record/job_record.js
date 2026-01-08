@@ -397,16 +397,29 @@ frappe.ui.form.on('Job Assignment', {
         let row = locals[cdt][cdn];
         let amount = flt(row.trip_amount) || 0;
     
-        let allowance_rate = flt(frm.doc.allowance_amount) || 0;
+        let allowance = 0;
     
-        let allowance = amount * allowance_rate;
+        if (row.driver_type === "Own") {
     
-        frappe.model.set_value(cdt, cdn, 'allowance', allowance);
+            let allowance_rate = flt(frm.doc.allowance_amount) || 0;
+            allowance = amount * allowance_rate;
+    
+            frappe.model.set_value(cdt, cdn, 'allowance', allowance);
+    
+        } else if (row.driver_type === "External") {
+    
+            allowance = amount;
+    
+            frappe.model.set_value(cdt, cdn, 'allowance', allowance);
+            frappe.model.set_value(cdt, cdn, 'vehicle_revenue', allowance); 
+        }
     
         if (!row.__creating_trip) {
             frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
         }
     },
+    
+    
 
     driver_type(frm, cdt, cdn) {
 
@@ -515,23 +528,35 @@ frappe.ui.form.on('Job Assignment', {
 frappe.ui.form.on("Job Record", {
 
     refresh(frm) {
+
         if (frm.doc.__islocal) return;
 
-        if (frm.doc.invoice_status === "Invoice Created") {
-            return;
+        if (frm.doc.invoice_status !== "Invoice Created") {
+            frm.add_custom_button("Create Sales Invoice", () => {
+                frm.events.create_sales_invoice(frm);
+            });
         }
 
-        frm.add_custom_button("Create Sales Invoice", () => {
-            frm.events.create_sales_invoice(frm);
+        // ------------------------------------------------
+        // FILTER ITEM TAX TEMPLATE BY COMPANY (CHILD TABLE)
+        // ------------------------------------------------
+        frm.set_query("item_tax_template", "invoice_item", function (doc, cdt, cdn) {
+            if (!frm.doc.company) return {};
+            return {
+                filters: {
+                    company: frm.doc.company
+                }
+            };
         });
     },
 
     async create_sales_invoice(frm) {
 
+        // ---------------------------
+        // CHECK DUPLICATE
+        // ---------------------------
         const existing_invoice = await frappe.db.get_list("Sales Invoice", {
-            filters: {
-                custom_job_record: frm.doc.name
-            },
+            filters: { custom_job_record: frm.doc.name },
             fields: ["name", "docstatus"],
             limit: 1
         });
@@ -545,92 +570,85 @@ frappe.ui.form.on("Job Record", {
             return;
         }
 
+        // ---------------------------
+        // BASIC VALIDATION
+        // ---------------------------
         if (!frm.doc.invoice_item || !frm.doc.invoice_item.length) {
             frappe.msgprint({
                 title: __("No Items"),
-                message: __("Please add at least one row in <b>Invoice Items</b>."),
+                message: __("Please add at least one row in Invoice Items."),
                 indicator: "red"
             });
             return;
         }
 
-        if (!frm.doc.company) {
+        if (!frm.doc.company || !frm.doc.customer) {
             frappe.msgprint({
-                title: __("Missing Company"),
-                message: __("Company is required in Job Record."),
+                title: __("Missing Data"),
+                message: __("Company and Customer are required."),
                 indicator: "red"
             });
             return;
         }
 
-        if (!frm.doc.customer) {
-            frappe.msgprint({
-                title: __("Missing Customer"),
-                message: __("Customer is required in Job Record."),
-                indicator: "red"
-            });
-            return;
-        }
+        // ---------------------------
+        // BUILD ITEMS + ITEM-WISE TAX
+        // ---------------------------
+        let items = [];
+        let tax_accounts = {};   // tax heads for header
 
-        const templates = await frappe.db.get_list(
-            "Sales Taxes and Charges Template",
-            {
-                filters: {
-                    company: frm.doc.company,
-                    is_default: 1,
-                    disabled: 0
-                },
-                fields: ["name"],
-                limit: 1
-            }
-        );
+        for (let row of frm.doc.invoice_item) {
 
-        if (!templates.length) {
-            frappe.msgprint({
-                title: __("VAT Not Configured"),
-                message: __("No default Sales Taxes and Charges Template found for this Company."),
-                indicator: "red"
-            });
-            return;
-        }
-
-        const tax_template = templates[0].name;
-
-        const template_doc = await frappe.db.get_doc(
-            "Sales Taxes and Charges Template",
-            tax_template
-        );
-
-        if (!template_doc.taxes || !template_doc.taxes.length) {
-            frappe.msgprint({
-                title: __("VAT Template Error"),
-                message: __("Default Sales Tax Template has no tax rows."),
-                indicator: "red"
-            });
-            return;
-        }
-
-        const taxes = template_doc.taxes.map(t => ({
-            charge_type: t.charge_type,
-            account_head: t.account_head,
-            description: t.description,
-            rate: t.rate,
-            included_in_print_rate: t.included_in_print_rate || 0
-        }));
-
-        const items = frm.doc.invoice_item.map(row => {
             if (!row.item || !row.qty || !row.rate) {
                 frappe.throw(__("Item, Qty and Rate are mandatory in Invoice Items"));
             }
 
-            return {
+            let item_tax_rate = null;
+
+            if (row.item_tax_template) {
+
+                const tax_doc = await frappe.db.get_doc(
+                    "Item Tax Template",
+                    row.item_tax_template
+                );
+
+                if (tax_doc.taxes && tax_doc.taxes.length) {
+
+                    let tax_map = {};
+
+                    tax_doc.taxes.forEach(t => {
+                        tax_map[t.tax_type] = t.tax_rate;
+                        tax_accounts[t.tax_type] = true; // collect header tax head
+                    });
+
+                    item_tax_rate = JSON.stringify(tax_map);
+                }
+            }
+
+            items.push({
                 item_code: row.item,
                 qty: row.qty,
                 rate: row.rate,
+                item_tax_template: row.item_tax_template || null,
+                item_tax_rate: item_tax_rate,   // ✅ item-wise VAT
                 custom_container_no: frm.doc.custom_container_no
-            };
-        });
+            });
+        }
 
+        // ---------------------------
+        // HEADER TAX ROWS (RATE = 0)
+        // ---------------------------
+        let taxes = Object.keys(tax_accounts).map(acc => ({
+            charge_type: "On Net Total",
+            account_head: acc,
+            description: acc,
+            rate: 0,                     // item-wise tax will apply
+            included_in_print_rate: 0
+        }));
+
+        // ---------------------------
+        // CREATE SALES INVOICE
+        // ---------------------------
         frappe.call({
             method: "frappe.client.insert",
             args: {
@@ -641,10 +659,8 @@ frappe.ui.form.on("Job Record", {
                     cost_center: frm.doc.branch,
                     posting_date: frappe.datetime.get_today(),
                     custom_job_record: frm.doc.name,
-
-                    taxes_and_charges: tax_template,
-                    taxes: taxes,
-                    items: items
+                    items: items,
+                    taxes: taxes
                 }
             },
             callback(r) {

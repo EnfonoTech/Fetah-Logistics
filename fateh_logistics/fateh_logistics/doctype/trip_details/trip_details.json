@@ -16,6 +16,7 @@
   "column_break_htvi",
   "posting_date",
   "status",
+  "driver_name",
   "end_datetime",
   "delivery_date_time",
   "unloading_place",
@@ -49,8 +50,10 @@
    "options": "Vehicle"
   },
   {
+   "fetch_from": "job_records.etd",
+   "fetch_if_empty": 1,
    "fieldname": "start_datetime",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "Start Date Time"
   },
   {
@@ -74,8 +77,10 @@
    "options": "Pending\nCreated\nIn Progress\nTrip Completed\nCancelled"
   },
   {
+   "fetch_from": "job_records.eta",
+   "fetch_if_empty": 1,
    "fieldname": "end_datetime",
-   "fieldtype": "Datetime",
+   "fieldtype": "Date",
    "label": "End Date Time"
   },
   {
@@ -84,6 +89,8 @@
    "label": "Pickup Date Time"
   },
   {
+   "fetch_from": "job_records.place_of_receipt",
+   "fetch_if_empty": 1,
    "fieldname": "loading_place",
    "fieldtype": "Data",
    "label": "Loading Place"
@@ -94,6 +101,8 @@
    "label": "Delivery Date Time"
   },
   {
+   "fetch_from": "job_records.place_of_delivery",
+   "fetch_if_empty": 1,
    "fieldname": "unloading_place",
    "fieldtype": "Data",
    "label": "Unloading Place"
@@ -135,6 +144,14 @@
    "fieldtype": "Date",
    "label": "Posting Date",
    "read_only": 1
+  },
+  {
+   "fetch_from": "driver.full_name",
+   "fieldname": "driver_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Driver Name"
   }
  ],
  "index_web_pages_for_search": 1,
@@ -145,7 +162,7 @@
    "link_fieldname": "custom_trip_details"
   }
  ],
- "modified": "2025-12-01 12:17:27.402031",
+ "modified": "2026-01-08 15:32:43.614660",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Trip Details",
