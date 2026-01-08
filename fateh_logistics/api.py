@@ -969,7 +969,7 @@ def create_trip_details(job_record, job_assignment, driver, vehicle, trip_amount
     trip.trip_amount = trip_amount
     trip.allowance = allowance
     trip.vehicle_revenue = vehicle_revenue
-    trip.status = "Created"
+    trip.status = "Trip Completed"
     trip.insert(ignore_permissions=True)
 
     frappe.db.set_value("Job Assignment", job_assignment, "trip_detail_status", "Created")
