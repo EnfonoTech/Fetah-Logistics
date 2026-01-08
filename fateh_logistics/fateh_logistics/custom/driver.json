@@ -111,7 +111,7 @@
    "property": "depends_on",
    "property_type": "Data",
    "row_name": null,
-   "value": "eval:doc.transporter\r\n"
+   "value": "eval:!doc.transporter"
   },
   {
    "_assign": null,
@@ -180,7 +180,7 @@
    "property": "depends_on",
    "property_type": "Data",
    "row_name": null,
-   "value": ""
+   "value": "eval:!doc.employee"
   }
  ],
  "sync_on_migrate": 1

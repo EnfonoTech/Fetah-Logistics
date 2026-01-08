@@ -249,13 +249,11 @@
   {
    "fieldname": "eta",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "ETA"
   },
   {
    "fieldname": "etd",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "ETD"
   },
   {

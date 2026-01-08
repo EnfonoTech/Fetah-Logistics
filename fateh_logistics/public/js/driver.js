@@ -77,7 +77,8 @@ frappe.ui.form.on("Driver", {
     },
     
     process_allowance: function(frm) {
-        const balance = frm.doc.allowance_balance || (frm.doc.allowance || 0) - (frm.doc.allowance_taken || 0);
+        // Use allowance_balance directly (it's calculated from allowance minus Additional Salary amounts)
+        const balance = frm.doc.allowance_balance || 0;
         
         if (balance <= 0) {
             frappe.msgprint(__("No allowance balance to process"));

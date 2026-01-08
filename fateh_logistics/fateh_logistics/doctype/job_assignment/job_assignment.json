@@ -90,7 +90,7 @@
    "fieldname": "allowance",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Allowance "
+   "label": "Allowance / Cost"
   },
   {
    "fieldname": "container_number",

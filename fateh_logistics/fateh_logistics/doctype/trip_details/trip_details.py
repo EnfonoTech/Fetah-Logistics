@@ -18,10 +18,11 @@ def make_purchase_invoice(source_name, target_doc=None):
 	if not source.driver:
 		frappe.throw("Driver is required to create Purchase Invoice")
 	
-	driver = frappe.get_doc("Driver", source.driver)
+	# Get driver transporter using db.get_value to avoid loading full doc
+	transporter = frappe.db.get_value("Driver", source.driver, "transporter")
 	
 	# Check if driver is external (has transporter, no employee)
-	if not driver.transporter:
+	if not transporter:
 		frappe.throw("Purchase Invoice can only be created for external drivers (drivers with transporter)")
 	
 	# Get company
@@ -36,7 +37,7 @@ def make_purchase_invoice(source_name, target_doc=None):
 	
 	# Set basic fields FIRST
 	pi.company = company
-	pi.supplier = driver.transporter
+	pi.supplier = transporter
 	pi.posting_date = today()
 	
 	# Set custom fields
@@ -61,9 +62,9 @@ class TripDetails(Document):
 	def before_save(self):
 		"""Auto-update driver and job assignment allowances when trip is completed (only for internal drivers)"""
 		if self.status == "Trip Completed" and self.driver and self.allowance:
-			# Check if driver is internal (has employee) before updating
-			driver = frappe.get_doc("Driver", self.driver)
-			if driver.employee:
+			# Check if driver is internal (has employee) before updating - use db.get_value to avoid loading full doc
+			employee = frappe.db.get_value("Driver", self.driver, "employee")
+			if employee:
 				# Update driver allowance synchronously when trip is completed
 				try:
 					update_driver_allowances(self.driver)
@@ -82,9 +83,9 @@ class TripDetails(Document):
 	def after_insert(self):
 		"""Auto-update driver and job assignment allowances when trip is created with allowance (only for internal drivers)"""
 		if self.driver and self.allowance:
-			# Check if driver is internal (has employee) before updating
-			driver = frappe.get_doc("Driver", self.driver)
-			if driver.employee:
+			# Check if driver is internal (has employee) before updating - use db.get_value to avoid loading full doc
+			employee = frappe.db.get_value("Driver", self.driver, "employee")
+			if employee:
 				# Update driver allowance in background
 				frappe.enqueue(
 					"fateh_logistics.api.update_driver_allowances",
@@ -108,9 +109,9 @@ class TripDetails(Document):
 				(self.has_value_changed("status") and self.status == "Trip Completed"))
 			
 			if should_update:
-				# Check if driver is internal (has employee) before updating
-				driver = frappe.get_doc("Driver", self.driver)
-				if driver.employee:
+				# Check if driver is internal (has employee) before updating - use db.get_value to avoid loading full doc
+				employee = frappe.db.get_value("Driver", self.driver, "employee")
+				if employee:
 					# Update driver allowance in background
 					frappe.enqueue(
 						"fateh_logistics.api.update_driver_allowances",

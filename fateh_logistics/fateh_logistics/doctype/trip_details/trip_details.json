@@ -114,7 +114,7 @@
   {
    "fieldname": "allowance",
    "fieldtype": "Currency",
-   "label": "Allowance"
+   "label": "Allowance / Cost"
   },
   {
    "fieldname": "custom_purchase_invoice_status",
