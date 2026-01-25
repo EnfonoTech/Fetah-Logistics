@@ -53,37 +53,15 @@ def get_data(filters):
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
     
-    # Build Trip Details filter based on vehicle assignment
-    trip_filter = {"docstatus": ["!=", 2]}
+    # Get all Internal vehicles first
+    vehicle_filter = {"custom_is_external": "Internal"}
     if filters.get("vehicle"):
-        trip_filter["vehicle"] = filters.get("vehicle")
+        vehicle_filter["name"] = filters.get("vehicle")
     
-    # Add date filter
-    if from_date and to_date:
-        trip_filter["posting_date"] = ["between", [from_date, to_date]]
-    elif from_date:
-        trip_filter["posting_date"] = [">=", from_date]
-    elif to_date:
-        trip_filter["posting_date"] = ["<=", to_date]
-    
-    # Get unique vehicles from Trip Details
-    trip_details = frappe.get_all(
-        "Trip Details",
-        filters=trip_filter,
-        fields=["vehicle"],
-        distinct=True
-    )
-    
-    # Get unique vehicle names
-    vehicle_names = list(set([trip.vehicle for trip in trip_details if trip.vehicle]))
-    
-    if not vehicle_names:
-        return []
-    
-    # Get vehicle details
+    # Get vehicle details - only Internal vehicles
     vehicles = frappe.get_all(
         "Vehicle",
-        filters={"name": ["in", vehicle_names]},
+        filters=vehicle_filter,
         fields=["name", "license_plate", "employee"]
     )
     
@@ -91,22 +69,22 @@ def get_data(filters):
     if filters.get("employee"):
         vehicles = [v for v in vehicles if v.employee == filters.get("employee")]
     
+    if not vehicles:
+        return []
+    
     data = []
     
     for vehicle in vehicles:
         vehicle_name = vehicle.name
         
-        # Get Trip Details Revenue (Income from Trip Details)
-        trip_revenue = get_trip_revenue_for_vehicle(vehicle_name, from_date, to_date)
-        total_credit = trip_revenue
+        # Get Total Credit from job_assignment trip_amount
+        total_credit = get_trip_amount_from_job_assignment(vehicle_name, from_date, to_date)
         
-        # Get Purchase Invoices (part of Total Debit)
-        purchase_invoices = get_purchase_invoices_for_vehicle(vehicle_name, from_date, to_date)
-        total_purchase = sum([inv.get("base_total", 0) or 0 for inv in purchase_invoices])
+        # Get Purchase Invoices (part of Total Debit) - only sum rows with vehicle
+        total_purchase = get_purchase_invoice_amount_for_vehicle(vehicle_name, from_date, to_date)
         
-        # Get Journal Entries (part of Total Debit)
-        journal_entries = get_journal_entries_for_vehicle(vehicle_name, from_date, to_date)
-        total_journal = sum([entry.get("total_debit", 0) or 0 for entry in journal_entries])
+        # Get Journal Entries (part of Total Debit) - only sum rows with vehicle
+        total_journal = get_journal_entry_amount_for_vehicle(vehicle_name, from_date, to_date)
         
         total_debit = total_purchase + total_journal
         profit_loss = total_credit - total_debit
@@ -133,95 +111,13 @@ def get_data(filters):
     return data
 
 
-def get_purchase_invoices_for_vehicle(vehicle, from_date=None, to_date=None):
-    """Get Purchase Invoices linked to vehicle via Purchase Invoice Item"""
-    if not vehicle:
-        return []
-    
-    # Query child table to find parent Purchase Invoices
-    purchase_invoice_items = frappe.get_all(
-        "Purchase Invoice Item",
-        filters={"custom_vehicle": vehicle},
-        fields=["parent", "parenttype"],
-        distinct=True
-    )
-    
-    if not purchase_invoice_items:
-        return []
-    
-    # Get unique parent Purchase Invoice names
-    purchase_invoice_names = [item.parent for item in purchase_invoice_items if item.parenttype == "Purchase Invoice"]
-    
-    if not purchase_invoice_names:
-        return []
-    
-    # Build date filter
-    date_filter = {"name": ["in", purchase_invoice_names], "docstatus": 1}
-    if from_date and to_date:
-        date_filter["posting_date"] = ["between", [from_date, to_date]]
-    elif from_date:
-        date_filter["posting_date"] = [">=", from_date]
-    elif to_date:
-        date_filter["posting_date"] = ["<=", to_date]
-    
-    # Get parent Purchase Invoice details
-    purchase_invoices = frappe.get_all(
-        "Purchase Invoice",
-        filters=date_filter,
-        fields=["name", "base_grand_total", "base_total", "outstanding_amount", "currency", "posting_date"]
-    )
-    
-    return purchase_invoices
-
-
-def get_journal_entries_for_vehicle(vehicle, from_date=None, to_date=None):
-    """Get Journal Entries linked to vehicle via Journal Entry Account"""
-    if not vehicle:
-        return []
-    
-    # Query child table to find parent Journal Entries
-    journal_entry_accounts = frappe.get_all(
-        "Journal Entry Account",
-        filters={"custom_vehicle": vehicle},
-        fields=["parent", "parenttype"],
-        distinct=True
-    )
-    
-    if not journal_entry_accounts:
-        return []
-    
-    # Get unique parent Journal Entry names
-    journal_entry_names = [acc.parent for acc in journal_entry_accounts if acc.parenttype == "Journal Entry"]
-    
-    if not journal_entry_names:
-        return []
-    
-    # Build date filter
-    date_filter = {"name": ["in", journal_entry_names], "docstatus": 1}
-    if from_date and to_date:
-        date_filter["posting_date"] = ["between", [from_date, to_date]]
-    elif from_date:
-        date_filter["posting_date"] = [">=", from_date]
-    elif to_date:
-        date_filter["posting_date"] = ["<=", to_date]
-    
-    # Get parent Journal Entry details
-    journal_entries = frappe.get_all(
-        "Journal Entry",
-        filters=date_filter,
-        fields=["name", "total_debit", "total_credit", "total_amount_currency", "posting_date"]
-    )
-    
-    return journal_entries
-
-
-def get_trip_revenue_for_vehicle(vehicle, from_date=None, to_date=None):
-    """Get Vehicle Revenue from Trip Details"""
+def get_purchase_invoice_amount_for_vehicle(vehicle, from_date=None, to_date=None):
+    """Get sum of Purchase Invoice Item amounts where vehicle matches"""
     if not vehicle:
         return 0
     
-    # Build date filter
-    date_filter = {"vehicle": vehicle, "docstatus": ["!=", 2]}
+    # Build date filter for parent Purchase Invoices
+    date_filter = {"docstatus": 1}
     if from_date and to_date:
         date_filter["posting_date"] = ["between", [from_date, to_date]]
     elif from_date:
@@ -229,15 +125,117 @@ def get_trip_revenue_for_vehicle(vehicle, from_date=None, to_date=None):
     elif to_date:
         date_filter["posting_date"] = ["<=", to_date]
     
-    # Get Trip Details with vehicle_revenue
-    trip_details = frappe.get_all(
-        "Trip Details",
+    # Get all Purchase Invoices in date range
+    purchase_invoices = frappe.get_all(
+        "Purchase Invoice",
         filters=date_filter,
-        fields=["name", "vehicle_revenue", "posting_date"]
+        fields=["name"]
     )
     
-    # Sum up vehicle_revenue
-    total_revenue = sum([trip.get("vehicle_revenue", 0) or 0 for trip in trip_details])
+    if not purchase_invoices:
+        return 0
     
-    return total_revenue
+    purchase_invoice_names = [pi.name for pi in purchase_invoices]
+    
+    # Get Purchase Invoice Items where vehicle matches and parent is in date range
+    purchase_invoice_items = frappe.get_all(
+        "Purchase Invoice Item",
+        filters={
+            "custom_vehicle": vehicle,
+            "parent": ["in", purchase_invoice_names],
+            "parenttype": "Purchase Invoice"
+        },
+        fields=["amount", "base_amount"]
+    )
+    
+    # Sum only the amounts of items where vehicle matches
+    total_amount = sum([item.get("base_amount", 0) or item.get("amount", 0) or 0 for item in purchase_invoice_items])
+    
+    return total_amount
+
+
+def get_journal_entry_amount_for_vehicle(vehicle, from_date=None, to_date=None):
+    """Get sum of Journal Entry Account debit amounts where vehicle matches"""
+    if not vehicle:
+        return 0
+    
+    # Build date filter for parent Journal Entries
+    date_filter = {"docstatus": 1}
+    if from_date and to_date:
+        date_filter["posting_date"] = ["between", [from_date, to_date]]
+    elif from_date:
+        date_filter["posting_date"] = [">=", from_date]
+    elif to_date:
+        date_filter["posting_date"] = ["<=", to_date]
+    
+    # Get all Journal Entries in date range
+    journal_entries = frappe.get_all(
+        "Journal Entry",
+        filters=date_filter,
+        fields=["name"]
+    )
+    
+    if not journal_entries:
+        return 0
+    
+    journal_entry_names = [je.name for je in journal_entries]
+    
+    # Get Journal Entry Accounts where vehicle matches and parent is in date range
+    journal_entry_accounts = frappe.get_all(
+        "Journal Entry Account",
+        filters={
+            "custom_vehicle": vehicle,
+            "parent": ["in", journal_entry_names],
+            "parenttype": "Journal Entry"
+        },
+        fields=["debit", "debit_in_account_currency"]
+    )
+    
+    # Sum only the debit amounts of accounts where vehicle matches
+    total_debit = sum([acc.get("debit", 0) or acc.get("debit_in_account_currency", 0) or 0 for acc in journal_entry_accounts])
+    
+    return total_debit
+
+
+def get_trip_amount_from_job_assignment(vehicle, from_date=None, to_date=None):
+    """Get sum of trip_amount from job_assignment table for the vehicle"""
+    if not vehicle:
+        return 0
+    
+    # Build date filter for Job Record
+    date_filter = {"docstatus": ["<", 2]}
+    if from_date and to_date:
+        date_filter["date"] = ["between", [from_date, to_date]]
+    elif from_date:
+        date_filter["date"] = [">=", from_date]
+    elif to_date:
+        date_filter["date"] = ["<=", to_date]
+    
+    # Get all Job Records in date range
+    job_records = frappe.get_all(
+        "Job Record",
+        filters=date_filter,
+        fields=["name"]
+    )
+    
+    if not job_records:
+        return 0
+    
+    job_record_names = [jr.name for jr in job_records]
+    
+    # Get job_assignment rows where vehicle matches
+    job_assignments = frappe.get_all(
+        "Job Assignment",
+        filters={
+            "vehicle": vehicle,
+            "parent": ["in", job_record_names],
+            "parenttype": "Job Record"
+        },
+        fields=["trip_amount"]
+    )
+    
+    # Sum up trip_amount
+    total_trip_amount = sum([ja.get("trip_amount", 0) or 0 for ja in job_assignments])
+    
+    return total_trip_amount
 
