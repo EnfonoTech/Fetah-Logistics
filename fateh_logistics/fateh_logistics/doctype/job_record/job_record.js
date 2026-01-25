@@ -396,30 +396,35 @@ frappe.ui.form.on('Job Assignment', {
 
         let row = locals[cdt][cdn];
         let amount = flt(row.trip_amount) || 0;
-    
+
         let allowance = 0;
-    
+
         if (row.driver_type === "Own") {
-    
-            let allowance_rate = flt(frm.doc.allowance_amount) || 0;
-            allowance = amount * allowance_rate;
-    
+
+            let allowance_rate = flt(frm.doc.allowance_amount);
+
+            if (!allowance_rate) {
+                frappe.msgprint(__("Allowance % is not set in Job Record"));
+                allowance = 0;
+            } else {
+                allowance = amount * allowance_rate;
+            }
+
             frappe.model.set_value(cdt, cdn, 'allowance', allowance);
-    
+
         } else if (row.driver_type === "External") {
-    
+
             allowance = amount;
-    
+
             frappe.model.set_value(cdt, cdn, 'allowance', allowance);
-            frappe.model.set_value(cdt, cdn, 'vehicle_revenue', allowance); 
+            frappe.model.set_value(cdt, cdn, 'vehicle_revenue', allowance);
         }
-    
+
         if (!row.__creating_trip) {
             frappe.model.set_value(cdt, cdn, 'trip_detail_status', 'Pending');
         }
     },
-    
-    
+
 
     driver_type(frm, cdt, cdn) {
 
