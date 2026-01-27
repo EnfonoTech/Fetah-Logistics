@@ -12,7 +12,6 @@
   "date",
   "company",
   "branch",
-  "job_type",
   "quotation",
   "region_id",
   "job_type_id",
@@ -26,9 +25,18 @@
   "customer_name",
   "attention",
   "attentions",
-  "pobl_no",
-  "blawb_no",
   "allowance_amount",
+  "job_information",
+  "job_types",
+  "column_break_lqed",
+  "po_no",
+  "bl_no",
+  "bl_date",
+  "bayan_no",
+  "awb_no",
+  "awb_date",
+  "port_of_loading_pol",
+  "port_of_discharge_pod",
   "section_break_mvga",
   "job_assignment",
   "invoice_details_section",
@@ -97,14 +105,6 @@
    "label": "Date"
   },
   {
-   "fieldname": "job_type",
-   "fieldtype": "Select",
-   "in_filter": 1,
-   "in_list_view": 1,
-   "label": "Job Type",
-   "options": "\nTRANSPORTATION\nCUSTOMS CLEARANCE\nWAREHOUSE"
-  },
-  {
    "fieldname": "job_status",
    "fieldtype": "Select",
    "in_filter": 1,
@@ -160,12 +160,6 @@
    "fieldtype": "Link",
    "label": "Attention",
    "options": "Contact"
-  },
-  {
-   "fieldname": "blawb_no",
-   "fieldtype": "Data",
-   "label": "BAYAN/AWB No",
-   "translatable": 1
   },
   {
    "fieldname": "branch",
@@ -348,12 +342,6 @@
    "label": "Place of Receipt"
   },
   {
-   "fieldname": "pobl_no",
-   "fieldtype": "Data",
-   "label": "PO/BL No",
-   "translatable": 1
-  },
-  {
    "fieldname": "pol",
    "fieldtype": "Data",
    "hidden": 1,
@@ -458,6 +446,7 @@
    "label": "TWB Date"
   },
   {
+   "depends_on": "eval:doc.job_types == \"Land Transport\"",
    "fieldname": "twb_no",
    "fieldtype": "Data",
    "hidden": 1,
@@ -539,6 +528,67 @@
    "fieldtype": "Float",
    "hidden": 1,
    "label": "Allowance Amount"
+  },
+  {
+   "fieldname": "job_information",
+   "fieldtype": "Section Break",
+   "label": "Job Information"
+  },
+  {
+   "fieldname": "job_types",
+   "fieldtype": "Link",
+   "label": "Job Types",
+   "options": "Job Type"
+  },
+  {
+   "fieldname": "column_break_lqed",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.job_types === \"Sea Transport\"",
+   "fieldname": "po_no",
+   "fieldtype": "Data",
+   "label": "PO No"
+  },
+  {
+   "depends_on": "eval:doc.job_types === \"Sea Transport\"",
+   "fieldname": "bl_no",
+   "fieldtype": "Data",
+   "label": "BL No"
+  },
+  {
+   "fieldname": "bayan_no",
+   "fieldtype": "Data",
+   "label": "BAYAN No"
+  },
+  {
+   "depends_on": "eval:doc.job_types === \"Air Transport\"",
+   "fieldname": "awb_no",
+   "fieldtype": "Data",
+   "label": "AWB No"
+  },
+  {
+   "depends_on": "eval:doc.job_types === \"Air Transport\"",
+   "fieldname": "awb_date",
+   "fieldtype": "Date",
+   "label": "AWB Date"
+  },
+  {
+   "fieldname": "bl_date",
+   "fieldtype": "Date",
+   "label": "BL Date"
+  },
+  {
+   "depends_on": "eval:doc.job_types === \"Sea Transport\"",
+   "fieldname": "port_of_loading_pol",
+   "fieldtype": "Data",
+   "label": "Port of Loading (POL)"
+  },
+  {
+   "depends_on": "eval:doc.job_types === \"Sea Transport\"",
+   "fieldname": "port_of_discharge_pod",
+   "fieldtype": "Data",
+   "label": "Port of Discharge (POD)"
   }
  ],
  "grid_page_length": 50,
@@ -581,7 +631,7 @@
    "link_fieldname": "job_records"
   }
  ],
- "modified": "2025-12-20 15:17:54.606799",
+ "modified": "2026-01-27 13:56:49.609154",
  "modified_by": "Administrator",
  "module": "Fateh Logistics",
  "name": "Job Record",
