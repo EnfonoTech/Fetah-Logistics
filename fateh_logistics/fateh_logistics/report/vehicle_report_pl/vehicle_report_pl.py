@@ -146,12 +146,12 @@ def get_data(filters):
             filters={
                 "parent": ["in", pi_names],
                 "parenttype": "Purchase Invoice",
-                "custom_vehicle": ["in", vehicles_in_report]
+                "vehicle": ["in", vehicles_in_report]
             },
-            fields=["custom_vehicle", "base_amount", "amount"]
+            fields=["vehicle", "base_amount", "amount"]
         )
         for item in pi_items:
-            v = item.custom_vehicle
+            v = item.vehicle
             pi_debit_map[v] = pi_debit_map.get(v, 0) + (item.base_amount or item.amount or 0)
 
     #Journal Entry detail per vehicle
@@ -174,12 +174,12 @@ def get_data(filters):
             filters={
                 "parent": ["in", je_names],
                 "parenttype": "Journal Entry",
-                "custom_vehicle": ["in", vehicles_in_report]
+                "vehicle": ["in", vehicles_in_report]
             },
-            fields=["parent", "custom_vehicle", "account", "debit", "debit_in_account_currency"]
+            fields=["parent", "vehicle", "account", "debit", "debit_in_account_currency"]
         )
         for acc in je_accounts:
-            v = acc.custom_vehicle
+            v = acc.vehicle
             debit_amt = acc.debit or acc.debit_in_account_currency or 0
             if debit_amt <= 0:
                 continue
