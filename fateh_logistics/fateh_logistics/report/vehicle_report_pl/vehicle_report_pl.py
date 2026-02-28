@@ -36,9 +36,15 @@ def get_columns():
         },
         {
             "fieldname": "total_credit",
-            "label": _("Total Credit"),
+            "label": _("Trip Credit"),
             "fieldtype": "Currency",
             "width": 130
+        },
+        {
+            "fieldname": "vehicle_total_credit",
+            "label": _("Total Credit"),
+            "fieldtype": "Currency",
+            "width": 140
         },
         {
             "fieldname": "journal_entry",
@@ -91,7 +97,7 @@ def get_data(filters):
     driver_filter     = parse_multivalue(filters.get("driver")) 
     job_record_filter = parse_multivalue(filters.get("job_record"))
 
-    #Job Records within date range
+   
     jr_filters = {"docstatus": ["<", 2]}
     if from_date and to_date:
         jr_filters["date"] = ["between", [from_date, to_date]]
@@ -103,11 +109,12 @@ def get_data(filters):
     if job_record_filter:
         jr_filters["name"] = job_record_filter[0] if len(job_record_filter) == 1 else ["in", job_record_filter]
 
-    job_records = frappe.get_all("Job Record", filters=jr_filters, fields=["name"])
+    job_records = frappe.get_all("Job Record", filters=jr_filters, fields=["name", "date"])
     if not job_records:
         return []
 
     jr_names = [jr.name for jr in job_records]
+    jr_date_map = {jr.name: jr.date for jr in job_records}
 
     #Job Assignments
     ja_filters = {"parent": ["in", jr_names], "parenttype": "Job Record"}
@@ -146,12 +153,12 @@ def get_data(filters):
             filters={
                 "parent": ["in", pi_names],
                 "parenttype": "Purchase Invoice",
-                "vehicle": ["in", vehicles_in_report]
+                "custom_vehicle": ["in", vehicles_in_report]
             },
-            fields=["vehicle", "base_amount", "amount"]
+            fields=["custom_vehicle", "base_amount", "amount"]
         )
         for item in pi_items:
-            v = item.vehicle
+            v = item.custom_vehicle
             pi_debit_map[v] = pi_debit_map.get(v, 0) + (item.base_amount or item.amount or 0)
 
     #Journal Entry detail per vehicle
@@ -169,17 +176,23 @@ def get_data(filters):
     je_list = frappe.get_all("Journal Entry", filters=je_date_filter, fields=["name"])
     if je_list:
         je_names = [j.name for j in je_list]
-        je_accounts = frappe.get_all(
-            "Journal Entry Account",
-            filters={
-                "parent": ["in", je_names],
-                "parenttype": "Journal Entry",
-                "vehicle": ["in", vehicles_in_report]
-            },
-            fields=["parent", "vehicle", "account", "debit", "debit_in_account_currency"]
-        )
+        je_names_fmt   = ", ".join(frappe.db.escape(n) for n in je_names)
+        vehicles_fmt   = ", ".join(frappe.db.escape(v) for v in vehicles_in_report)
+        je_accounts = frappe.db.sql("""
+            SELECT
+                parent,
+                custom_vehicle,
+                account,
+                debit,
+                debit_in_account_currency
+            FROM `tabJournal Entry Account`
+            WHERE
+                parenttype = 'Journal Entry'
+                AND parent IN ({je_names})
+                AND custom_vehicle IN ({vehicles})
+        """.format(je_names=je_names_fmt, vehicles=vehicles_fmt), as_dict=True)
         for acc in je_accounts:
-            v = acc.vehicle
+            v = acc.custom_vehicle
             debit_amt = acc.debit or acc.debit_in_account_currency or 0
             if debit_amt <= 0:
                 continue
@@ -191,8 +204,18 @@ def get_data(filters):
                 "je_debit":      debit_amt
             })
 
+    #sum of all trip_amounts
+    vehicle_total_credit_map = {}
+    for ja in job_assignments:
+        v = ja.get("vehicle") or ""
+        vehicle_total_credit_map[v] = vehicle_total_credit_map.get(v, 0) + (ja.get("trip_amount") or 0)
+
     #Build report rows
+   
+    job_assignments = sorted(job_assignments, key=lambda x: (x.get('vehicle') or '', jr_date_map.get(x.get('parent'), '')))
+
     data = []
+    vehicle_first_row = set()
 
     for ja in job_assignments:
         vehicle      = ja.get("vehicle") or ""
@@ -203,49 +226,56 @@ def get_data(filters):
 
         je_rows  = je_detail_map.get(vehicle, []) if vehicle not in je_used_vehicles else []
         je_total = sum(r["je_debit"] for r in je_detail_map.get(vehicle, []))
-        total_debit = pi_debit + je_total
-        profit_loss = total_credit - total_debit
+        total_debit  = pi_debit + je_total
+        profit_loss  = total_credit - total_debit
+
+        is_first = vehicle not in vehicle_first_row
+        if is_first:
+            vehicle_first_row.add(vehicle)
 
         if je_rows:
             je_used_vehicles.add(vehicle)
             first_je = je_rows[0]
             data.append({
-                "vehicle":       vehicle,
-                "job_record":    ja.get("parent"),
-                "driver":        driver_id,
-                "driver_name":   driver_name,
-                "total_credit":  total_credit,
-                "journal_entry": first_je["journal_entry"],
-                "account":       first_je["account"],
-                "je_debit":      first_je["je_debit"],
-                "total_debit":   total_debit,
-                "profit_loss":   profit_loss
+                "vehicle":              vehicle,
+                "job_record":           ja.get("parent"),
+                "driver":               driver_id,
+                "driver_name":          driver_name,
+                "total_credit":         total_credit,
+                "vehicle_total_credit": vehicle_total_credit_map.get(vehicle, 0) if is_first else None,
+                "journal_entry":        first_je["journal_entry"],
+                "account":              first_je["account"],
+                "je_debit":             first_je["je_debit"],
+                "total_debit":          total_debit if is_first else None,
+                "profit_loss":          profit_loss if is_first else None
             })
             for je_row in je_rows[1:]:
                 data.append({
-                    "vehicle":       "",
-                    "job_record":    "",
-                    "driver":        "",
-                    "driver_name":   "",
-                    "total_credit":  None,
-                    "journal_entry": je_row["journal_entry"],
-                    "account":       je_row["account"],
-                    "je_debit":      je_row["je_debit"],
-                    "total_debit":   None,
-                    "profit_loss":   None
+                    "vehicle":              "",
+                    "job_record":           "",
+                    "driver":               "",
+                    "driver_name":          "",
+                    "total_credit":         None,
+                    "vehicle_total_credit": None,
+                    "journal_entry":        je_row["journal_entry"],
+                    "account":              je_row["account"],
+                    "je_debit":             je_row["je_debit"],
+                    "total_debit":          None,
+                    "profit_loss":          None
                 })
         else:
             data.append({
-                "vehicle":       vehicle,
-                "job_record":    ja.get("parent"),
-                "driver":        driver_id,
-                "driver_name":   driver_name,
-                "total_credit":  total_credit,
-                "journal_entry": "",
-                "account":       "",
-                "je_debit":      None,
-                "total_debit":   total_debit,
-                "profit_loss":   profit_loss
+                "vehicle":              vehicle,
+                "job_record":           ja.get("parent"),
+                "driver":               driver_id,
+                "driver_name":          driver_name,
+                "total_credit":         total_credit,
+                "vehicle_total_credit": vehicle_total_credit_map.get(vehicle, 0) if is_first else None,
+                "journal_entry":        "",
+                "account":              "",
+                "je_debit":             None,
+                "total_debit":          total_debit if is_first else None,
+                "profit_loss":          profit_loss if is_first else None
             })
 
     return data
