@@ -227,7 +227,8 @@ def get_data(filters):
         je_rows  = je_detail_map.get(vehicle, []) if vehicle not in je_used_vehicles else []
         je_total = sum(r["je_debit"] for r in je_detail_map.get(vehicle, []))
         total_debit  = pi_debit + je_total
-        profit_loss  = total_credit - total_debit
+        vehicle_total_credit = vehicle_total_credit_map.get(vehicle, 0)
+        profit_loss  = vehicle_total_credit - total_debit
 
         is_first = vehicle not in vehicle_first_row
         if is_first:
