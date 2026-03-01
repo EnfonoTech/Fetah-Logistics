@@ -149,7 +149,10 @@ override_doctype_class = {
 doc_events = {
 	"Expense Request": {
 		"on_update": "fateh_logistics.api.setup"
-	}
+	},
+    "Sales Invoice": {
+        "before_submit": "fateh_logistics.api.validate_job_record_sales_invoice"
+    }
     # "Purchase Order": {
     #     "on_submit": "fateh_logistics.po_hooks.update_job_record_percent",
     #     "on_cancel": "fateh_logistics.po_hooks.update_job_record_percent",

@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe import utils
+from frappe.utils import date_diff
 
 """
 TODO
@@ -105,6 +106,15 @@ def initialise_journal_entry(expense_request_name):
         frappe.get_doc('Expense Request', expense_request_name)
     )
 
+def validate_job_record_sales_invoice(doc, method):
+
+    # Only for Job Record created invoices
+    if doc.custom_job_record:
+
+        if date_diff(doc.due_date, doc.posting_date) < 30:
+            frappe.throw(
+                "Due Date must be at least 30 days after Posting Date."
+            )
 
 def make_journal_entry(expense_request):
 
