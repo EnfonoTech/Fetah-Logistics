@@ -663,6 +663,7 @@ frappe.ui.form.on("Job Record", {
                     customer: frm.doc.customer,
                     cost_center: frm.doc.branch,
                     posting_date: frappe.datetime.get_today(),
+                    due_date: frappe.datetime.add_days(frappe.datetime.get_today(), 30),
                     custom_job_record: frm.doc.name,
                     items: items,
                     taxes: taxes
