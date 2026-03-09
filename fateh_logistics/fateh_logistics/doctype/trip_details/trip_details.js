@@ -1,10 +1,46 @@
 // Copyright (c) 2025, siva and contributors
 // For license information, please see license.txt
-frappe.ui.form.on("Trip Details", {
-	refresh(frm) {
 
-	},
+frappe.ui.form.on('Trip Details', {
+    pickup_date_time: function(frm) {
+        calculate_rent(frm);
+    },
+    delivery_date_time: function(frm) {
+        calculate_rent(frm);
+    },
+    custom_daily_rent: function(frm) {
+        calculate_rent(frm);
+    },
+    custom_container_number: function(frm) {
+        calculate_rent(frm);
+    }
 });
+
+/**
+ * This function calculates the total rent for a trip based on
+ * pickup and delivery date-time values.
+ */
+function calculate_rent(frm) {
+    if (frm.doc.pickup_date_time && frm.doc.delivery_date_time && frm.doc.custom_container_number) {
+        let days = frappe.datetime.get_day_diff(
+            frm.doc.delivery_date_time,
+            frm.doc.pickup_date_time
+        );
+        frm.set_value("custom_total__days", days);
+        if (days > 7 && frm.doc.custom_daily_rent) {
+
+            let rent_days = days - 7;
+            let total_rent = rent_days * frm.doc.custom_daily_rent;
+
+            frm.set_value("custom_total_rent", total_rent);
+
+        } else {
+
+            frm.set_value("custom_total_rent", 0);
+
+        }
+    }
+}
 
 
 
