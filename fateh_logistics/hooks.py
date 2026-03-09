@@ -298,7 +298,16 @@ fixtures = [
     {
         "dt": "Custom Field",
         "filters": [
-            ["module", "=", "Fateh Logistics"]
+            [
+				"name",
+				"in",
+				[
+					"Trip Details-custom_container_number",
+					"Trip Details-custom_total__days",
+                    "Trip Details-custom_daily_rent",
+                    "Trip Details-custom_total_rent",
+                ]
+			]
         ]
     },
 
