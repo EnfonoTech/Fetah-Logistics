@@ -1,103 +1,402 @@
-frappe.ready(function () {
 
-    const proto = frappe.ui.form.ControlMultiSelectList.prototype;
+frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
+	frappe.ui.form.ControlData
+) {
+	static trigger_change_on_input_event = false;
 
+	make_input() {
+		let template = `
+			<div class="multiselect-list dropdown">
+				<div class="form-control cursor-pointer input-xs" data-toggle="dropdown" tabindex=0>
+					<div class="status-text ellipsis"></div>
+				</div>
+				<ul class="dropdown-menu">
+					<li class="dropdown-input-wrapper">
+						<input type="text" class="form-control input-xs">
+					</li>
+					<div class="selectable-items"></div>
+					<li class="d-flex justify-content-end">
+						<button class="btn btn-secondary btn-xs select-all-options text-nowrap mr-2">
+							${__("Select All")}
+						</button>
+						<button class="btn btn-primary btn-xs clear-selections text-nowrap">
+							${__("Clear All")}
+						</button>
+					</li>
+				</ul>
+			</div>
+		`;
 
-    const original_make_input = proto.make_input;
+		this.$list_wrapper = $(template);
+		this.$input = $("<input>");
+		this.input = this.$input.get(0);
+		this.has_input = true;
 
-    proto.make_input = function () {
+		this.$list_wrapper.prependTo(this.input_area);
+		this.$filter_input = this.$list_wrapper.find("input");
 
-        original_make_input.call(this);
+		this.values = [];
+		this._options = [];
+		this._selected_values = [];
+		this.highlighted = -1;
 
-        let footer = this.$list_wrapper.find("li.text-right");
+		this.$list_wrapper.on("click", ".dropdown-menu", (e) => {
+			e.stopPropagation();
+		});
 
-        if (footer.length && !footer.find(".select-all-options").length) {
+		this.$list_wrapper.on("click", ".clear-selections", () => {
+			this.clear_all_selections();
+		});
 
-            let btn = $(`
-                <button class="btn btn-secondary btn-xs select-all-options mr-2">
-                    ${__("Select All")}
-                </button>
-            `);
+		this.$list_wrapper.on("click", ".select-all-options", () => {
+			this.select_all_options();
+		});
 
-            footer.prepend(btn);
+		this.$list_wrapper.on("click", ".selectable-item", (e) => {
+			let $target = $(e.currentTarget);
+			this.toggle_select_item($target);
+		});
 
-            btn.on("click", () => {
+		this.$list_wrapper.on(
+			"input",
+			"input",
+			frappe.utils.debounce((e) => {
+				this.set_options().then(() => {
+					let txt = e.target.value;
 
-                this.values = this._options.map(o => o.value);
-                this._selected_values = this._options.slice();
+					let filtered_options = this._options.filter((opt) => {
+						if (this.values.includes(opt.value)) {
+							return true;
+						}
 
-                this.update_status();
-                this.set_selectable_items(this._options);
+						return (
+							Awesomplete.FILTER_CONTAINS(opt.label, txt) ||
+							Awesomplete.FILTER_CONTAINS(opt.value, txt) ||
+							Awesomplete.FILTER_CONTAINS(opt.description, txt)
+						);
+					});
 
-                this.parse_validate_and_set_in_model("");
+					let options = this._selected_values
+						.concat(filtered_options)
+						.uniqBy((opt) => opt.value);
 
-            });
+					this.set_selectable_items(options);
+				});
+			}, 300)
+		);
 
-        }
+		this.$list_wrapper.on("keydown", "input", (e) => {
+			if (e.key === "ArrowDown") {
+				this.highlight_item(1);
+			} else if (e.key === "ArrowUp") {
+				this.highlight_item(-1);
+			} else if (e.key === "Enter") {
+				if (this._$last_highlighted) {
+					this.toggle_select_item(this._$last_highlighted);
+					return false;
+				}
+			}
+		});
 
-    };
+		this.$list_wrapper.on("keydown", (e) => {
+			if ($(e.target).is("input")) return;
 
+			if (e.key === "Backspace") {
+				this.set_value([]);
+			}
+		});
 
-    
+		this.$list_wrapper.on("show.bs.dropdown", () => {
+			this.set_options().then(() => {
+				if (!this._selected_values || !this._selected_values.length) {
+					this._selected_values = this.process_options(this.values);
+				}
 
-    const original_set_options = proto.set_options;
+				this._options = this._selected_values
+					.concat(this._options)
+					.uniqBy((opt) => opt.value);
 
-    proto.set_options = function () {
+				this.set_selectable_items(this._options);
+			});
+		});
 
-        let txt = this.$filter_input ? this.$filter_input.val() : "";
-        const LIMIT = 200;
+		this.set_input_attributes();
+	}
 
-        function normalize(options) {
-            return (options || []).map(o => ({
-                label: o.label || o.value,
-                value: o.value,
-                description: o.description
-            }));
-        }
+	set_input_attributes() {
+		this.$list_wrapper
+			.attr("data-fieldtype", this.df.fieldtype)
+			.attr("data-fieldname", this.df.fieldname);
 
-      
+		this.set_status(this.get_placeholder_text());
 
-        if (this.df.get_data) {
+		if (this.doctype) {
+			this.$list_wrapper.attr("data-doctype", this.doctype);
+		}
 
-            let result = this.df.get_data(txt);
+		if (this.df.input_css) {
+			this.$list_wrapper.css(this.df.input_css);
+		}
 
-            if (result && result.then) {
+		if (this.df.input_class) {
+			this.$list_wrapper.addClass(this.df.input_class);
+		}
+	}
 
-                return result.then(options => {
-                    this._options = normalize(options);
-                });
+	clear_all_selections() {
+		this.values = [];
+		this._selected_values = [];
+		this.update_status();
+		this.set_selectable_items(this._options);
+		this.parse_validate_and_set_in_model("");
+	}
 
-            }
+	select_all_options() {
+		this.values = this._options.map((opt) => opt.value);
+		this._selected_values = this._options.slice();
+		this.update_status();
+		this.set_selectable_items(this._options);
+		this.parse_validate_and_set_in_model("");
+	}
 
-            if (Array.isArray(result)) {
+	toggle_select_item($selectable_item) {
+		$selectable_item.toggleClass("selected");
 
-                this._options = normalize(result);
-                return Promise.resolve();
+		let value = decodeURIComponent($selectable_item.data().value);
 
-            }
+		if ($selectable_item.hasClass("selected")) {
+			this.values = this.values.slice();
+			this.values.push(value);
+		} else {
+			this.values = this.values.filter((val) => val !== value);
+		}
 
-        }
+		this.update_selected_values(value);
+		this.parse_validate_and_set_in_model("");
+		this.update_status();
+	}
 
-        
-        if (this.df.options && this.df.options !== "Array") {
+	set_value(value) {
+		if (!value) return Promise.resolve();
 
-            return frappe.call({
-                method: "frappe.desk.search.search_link",
-                args: {
-                    doctype: this.df.options,
-                    txt: txt,
-                    page_length: LIMIT
+		this._selected_values = [];
+
+		if (typeof value === "string") {
+			value = [value];
+		}
+
+		this.values.forEach((value) => {
+			this.$list_wrapper
+				.find(`.selectable-item[data-value=${CSS.escape(value)}]`)
+				.toggleClass("selected");
+		});
+
+		this.values = value;
+
+		this.values.forEach((value) => {
+			this.update_selected_values(value);
+
+			this.$list_wrapper
+				.find(`.selectable-item[data-value=${CSS.escape(value)}]`)
+				.toggleClass("selected");
+		});
+
+		this.parse_validate_and_set_in_model("");
+		this.update_status();
+
+		return Promise.resolve();
+	}
+
+	update_selected_values(value) {
+		this._selected_values = this._selected_values || [];
+
+		let option = this._options
+			.concat(this._selected_values)
+			.uniqBy((opt) => opt.value)
+			.find((opt) => opt.value === value);
+
+		if (option) {
+			if (this.values.includes(value)) {
+				this._selected_values.push(option);
+			} else {
+				this._selected_values = this._selected_values.filter(
+					(opt) => opt.value !== value
+				);
+			}
+		}
+	}
+
+	update_status() {
+		let text;
+
+		if (this.values.length === 0) {
+			text = this.get_placeholder_text();
+		} else if (this.values.length === 1) {
+			let val = this.values[0];
+			let option = this._options.find((opt) => opt.value === val);
+			text = option ? option.label : val;
+		} else {
+			text = __("{0} values selected", [this.values.length]);
+		}
+
+		this.set_status(text);
+	}
+
+	get_placeholder_text() {
+		return `<span class="text-extra-muted">${this.df.placeholder || ""}</span>`;
+	}
+
+	set_status(text) {
+		this.$list_wrapper.find(".status-text").html(text);
+	}
+
+	process_options(options) {
+		return options.map((option) => {
+			if (typeof option === "string") {
+				return {
+					label: option,
+					value: option,
+					description: "",
+				};
+			}
+
+			if (!option.label) {
+				option.label = option.value;
+			}
+
+			return option;
+		});
+	}
+
+	set_options() {
+		let promise = Promise.resolve();
+
+		if (this.df.get_data) {
+			let txt = this.$filter_input.val();
+			let value = this.df.get_data(txt);
+
+			if (!value) {
+				this._options = [];
+			} else if (value.then) {
+				promise = value.then((options) => {
+					this._options = this.process_options(options);
+				});
+			} else {
+				this._options = this.process_options(value);
+			}
+		} else {
+			this._options = this.process_options(this.df.options);
+		}
+
+		return promise;
+	}
+
+	set_selectable_items(options) {
+		let html = options
+			.map((option) => {
+				let encoded_value = encodeURIComponent(option.value);
+				let selected = this.values.includes(option.value) ? "selected" : "";
+
+				return `<li class="selectable-item ${selected}" data-value="${encoded_value}">
+					<div>
+						<strong>${option.label}</strong>
+						<div class="small">${option.description}</div>
+					</div>
+					<div class="multiselect-check">${frappe.utils.icon("tick", "xs")}</div>
+				</li>`;
+			})
+			.join("");
+
+		if (!html) {
+			html = `<li class="text-muted">${__("No values to show")}</li>`;
+		}
+
+		this.$list_wrapper.find(".selectable-items").html(html);
+		this.highlighted = -1;
+	}
+
+	get_value() {
+		return this.values;
+	}
+
+	highlight_item(value) {
+		this.highlighted += value;
+
+		if (this.highlighted < 0) this.highlighted = 0;
+
+		let $items = this.$list_wrapper.find(".selectable-item");
+
+		if (this.highlighted > $items.length - 1) {
+			this.highlighted = $items.length - 1;
+		}
+
+		let $item = $items[this.highlighted];
+
+		if (this._$last_highlighted) {
+			this._$last_highlighted.removeClass("highlighted");
+		}
+
+		this._$last_highlighted = $($item).addClass("highlighted");
+
+		this.scroll_dropdown_if_needed($item);
+	}
+
+	scroll_dropdown_if_needed($item) {
+		if ($item.scrollIntoView) {
+			$item.scrollIntoView({
+				behavior: "smooth",
+				block: "nearest",
+				inline: "start",
+			});
+		} else {
+			$item.parentNode.scrollTop =
+				$item.offsetTop - $item.parentNode.offsetTop;
+		}
+	}
+};
+
+// General Ledger account filter override
+setTimeout(() => {
+
+    if (frappe.query_report && frappe.query_report.report_name === "General Ledger") {
+
+        let filters = ["account", "party", "project", "cost_center"];
+
+        filters.forEach(field => {
+
+            let filter = frappe.query_report.get_filter(field);
+            if (!filter) return;
+
+            filter.df.get_data = function (txt) {
+
+                let doctype = filter.df.options;
+            
+                if (field === "party") {
+                    doctype = frappe.query_report.get_filter_value("party_type");
+                    if (!doctype) return [];
                 }
-            }).then(r => {
 
-                this._options = normalize(r.message);
+                let args = {
+                    doctype: doctype,
+                    txt: txt,
+                    page_length: 200
+                };
+            
+                if (field === "account" || field === "cost_center") {
+                    args.filters = {
+                        company: frappe.query_report.get_filter_value("company")
+                    };
+                }
 
-            });
+                return frappe.call({
+                    method: "frappe.desk.search.search_link",
+                    args: args
+                }).then(r => r.message);
 
-        }
+            };
 
-        return original_set_options.call(this);
+        });
 
-    };
+    }
 
-});
+}, 1500);
