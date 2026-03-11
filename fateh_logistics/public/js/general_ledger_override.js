@@ -375,7 +375,7 @@ setTimeout(() => {
                 let args = {
                     doctype: filter_doctypes[field],
                     txt: txt || "",
-                    page_length: 500
+                    page_length: 200
                 };
 
                 if (field === "cost_center") {
