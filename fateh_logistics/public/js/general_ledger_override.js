@@ -1,9 +1,11 @@
 frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	frappe.ui.form.ControlData
 ) {
+
 	static trigger_change_on_input_event = false;
 
 	make_input() {
+
 		let template = `
 			<div class="multiselect-list dropdown">
 				<div class="form-control cursor-pointer input-xs" data-toggle="dropdown" tabindex=0>
@@ -60,10 +62,13 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 			"input",
 			"input",
 			frappe.utils.debounce((e) => {
+
 				this.set_options().then(() => {
+
 					let txt = e.target.value;
 
 					let filtered_options = this._options.filter((opt) => {
+
 						if (this.values.includes(opt.value)) return true;
 
 						return (
@@ -79,28 +84,12 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 
 					this.set_selectable_items(options);
 				});
+
 			}, 300)
 		);
 
-		this.$list_wrapper.on("keydown", "input", (e) => {
-			if (e.key === "ArrowDown") {
-				this.highlight_item(1);
-			} else if (e.key === "ArrowUp") {
-				this.highlight_item(-1);
-			} else if (e.key === "Enter") {
-				if (this._$last_highlighted) {
-					this.toggle_select_item(this._$last_highlighted);
-					return false;
-				}
-			}
-		});
-
-		this.$list_wrapper.on("keydown", (e) => {
-			if ($(e.target).is("input")) return;
-			if (e.key === "Backspace") this.set_value([]);
-		});
-
 		this.$list_wrapper.on("show.bs.dropdown", () => {
+
 			this.set_options().then(() => {
 
 				if (!this._selected_values || !this._selected_values.length) {
@@ -125,28 +114,36 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 			.attr("data-fieldname", this.df.fieldname);
 
 		this.set_status(this.get_placeholder_text());
-
-		if (this.doctype) {
-			this.$list_wrapper.attr("data-doctype", this.doctype);
-		}
 	}
 
 	clear_all_selections() {
 
 		this.values = [];
 		this._selected_values = [];
+
 		this.update_status();
 		this.set_selectable_items(this._options);
+
 		this.parse_validate_and_set_in_model("");
+
+		if (frappe.query_report) {
+			frappe.query_report.refresh();
+		}
 	}
 
 	select_all_options() {
 
 		this.values = this._options.map((opt) => opt.value);
 		this._selected_values = this._options.slice();
+
 		this.update_status();
 		this.set_selectable_items(this._options);
+
 		this.parse_validate_and_set_in_model("");
+
+		if (frappe.query_report) {
+			frappe.query_report.refresh();
+		}
 	}
 
 	toggle_select_item($item) {
@@ -156,33 +153,16 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		let value = decodeURIComponent($item.data().value);
 
 		if ($item.hasClass("selected")) {
-			this.values = this.values.slice();
 			this.values.push(value);
 		} else {
 			this.values = this.values.filter((val) => val !== value);
 		}
 
-		this.update_selected_values(value);
 		this.parse_validate_and_set_in_model("");
 		this.update_status();
-	}
 
-	update_selected_values(value) {
-
-		this._selected_values = this._selected_values || [];
-
-		let option = this._options
-			.concat(this._selected_values)
-			.uniqBy((opt) => opt.value)
-			.find((opt) => opt.value === value);
-
-		if (!option) return;
-
-		if (this.values.includes(value)) {
-			this._selected_values.push(option);
-		} else {
-			this._selected_values =
-				this._selected_values.filter((opt) => opt.value !== value);
+		if (frappe.query_report) {
+			frappe.query_report.refresh();
 		}
 	}
 
@@ -194,14 +174,10 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 			text = this.get_placeholder_text();
 		}
 		else if (this.values.length === 1) {
-
-			let val = this.values[0];
-			let option = this._options.find((opt) => opt.value === val);
-			text = option ? option.label : val;
+			text = this.values[0];
 		}
 		else {
-
-			text = __("{0} values selected", [this.values.length]);
+			text = `${this.values.length} values selected`;
 		}
 
 		this.set_status(text);
@@ -220,7 +196,7 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		return options.map((option) => {
 
 			if (typeof option === "string") {
-				return { label: option, value: option, description: "" };
+				return { label: option, value: option };
 			}
 
 			if (!option.label) option.label = option.value;
@@ -265,19 +241,24 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 			let encoded = encodeURIComponent(option.value);
 			let selected = this.values.includes(option.value) ? "selected" : "";
 
-			return `<li class="selectable-item ${selected}" data-value="${encoded}">
-				<div>
-					<strong>${option.label}</strong>
-					<div class="small">${option.description || ""}</div>
-				</div>
-				<div class="multiselect-check">${frappe.utils.icon("tick","xs")}</div>
-			</li>`;
+			return `
+				<li class="selectable-item ${selected}" data-value="${encoded}">
+					<div>
+						<strong>${option.label}</strong>
+					</div>
+					<div class="multiselect-check">
+						${frappe.utils.icon("tick","xs")}
+					</div>
+				</li>
+			`;
+
 		}).join("");
 
-		if (!html) html = `<li class="text-muted">${__("No values to show")}</li>`;
+		if (!html) {
+			html = `<li class="text-muted">${__("No values to show")}</li>`;
+		}
 
 		this.$list_wrapper.find(".selectable-items").html(html);
-		this.highlighted = -1;
 	}
 
 	get_value() {
@@ -287,9 +268,7 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 
 
 
-/* ---------------------------------------------------------
-GLOBAL QUERY REPORT SUPPORT
-----------------------------------------------------------*/
+/* GLOBAL REPORT FILTER SUPPORT */
 
 frappe.after_ajax(() => {
 
@@ -305,17 +284,17 @@ frappe.after_ajax(() => {
 
 			let doctype = filter.df.options;
 
-			// party special case
 			if (filter.df.fieldname === "party") {
 
 				doctype = frappe.query_report.get_filter_value("party_type");
+
 				if (!doctype) return [];
 			}
 
 			let args = {
 				doctype: doctype,
 				txt: txt,
-				page_length: 200
+				page_length: "200"
 			};
 
 			if (["account","cost_center"].includes(filter.df.fieldname)) {
