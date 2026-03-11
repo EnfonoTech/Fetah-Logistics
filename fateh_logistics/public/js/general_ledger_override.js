@@ -1,3 +1,4 @@
+
 frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	frappe.ui.form.ControlData
 ) {
@@ -148,10 +149,6 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		this.update_status();
 		this.set_selectable_items(this._options);
 		this.parse_validate_and_set_in_model("");
-
-		if (frappe.query_report) {
-			frappe.query_report.refresh();
-		}
 	}
 
 	select_all_options() {
@@ -160,10 +157,6 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		this.update_status();
 		this.set_selectable_items(this._options);
 		this.parse_validate_and_set_in_model("");
-
-		if (frappe.query_report) {
-			frappe.query_report.refresh();
-		}
 	}
 
 	toggle_select_item($selectable_item) {
@@ -181,10 +174,6 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		this.update_selected_values(value);
 		this.parse_validate_and_set_in_model("");
 		this.update_status();
-
-		if (frappe.query_report) {
-			frappe.query_report.refresh();
-		}
 	}
 
 	set_value(value) {
@@ -214,10 +203,6 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 
 		this.parse_validate_and_set_in_model("");
 		this.update_status();
-
-		if (frappe.query_report) {
-			frappe.query_report.refresh();
-		}
 
 		return Promise.resolve();
 	}
@@ -370,33 +355,30 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	}
 };
 
+
 setTimeout(() => {
 
     if (frappe.query_report) {
 
-        let filters = ["vehicle", "cost_center"];
+        const filter_doctypes = {
+            cost_center: "Cost Center",
+            vehicle: "Vehicle"
+        };
 
-        filters.forEach(field => {
+        Object.keys(filter_doctypes).forEach(field => {
 
             let filter = frappe.query_report.get_filter(field);
             if (!filter) return;
 
             filter.df.get_data = function (txt) {
 
-                let doctype = filter.df.options;
-            
-                if (field === "party") {
-                    doctype = frappe.query_report.get_filter_value("party_type");
-                    if (!doctype) return [];
-                }
-
                 let args = {
-                    doctype: doctype,
-                    txt: txt,
+                    doctype: filter_doctypes[field],
+                    txt: txt || "",
                     page_length: 200
                 };
-            
-                if (field === "account" || field === "cost_center") {
+
+                if (field === "cost_center") {
                     args.filters = {
                         company: frappe.query_report.get_filter_value("company")
                     };
@@ -405,12 +387,19 @@ setTimeout(() => {
                 return frappe.call({
                     method: "frappe.desk.search.search_link",
                     args: args
-                }).then(r => r.message);
+                }).then(r => {
+                    return (r.message || []).map(d => ({
+                        value: d.value,
+                        label: d.label || d.value,
+                        description: d.description || ""
+                    }));
+                });
 
             };
 
+            filter.refresh();
         });
 
     }
 
-}, 1500);
+}, 1200);
