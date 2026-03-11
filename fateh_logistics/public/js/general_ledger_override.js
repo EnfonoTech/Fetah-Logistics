@@ -1,4 +1,3 @@
-
 frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	frappe.ui.form.ControlData
 ) {
@@ -65,9 +64,7 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 					let txt = e.target.value;
 
 					let filtered_options = this._options.filter((opt) => {
-						if (this.values.includes(opt.value)) {
-							return true;
-						}
+						if (this.values.includes(opt.value)) return true;
 
 						return (
 							Awesomplete.FILTER_CONTAINS(opt.label, txt) ||
@@ -100,14 +97,12 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 
 		this.$list_wrapper.on("keydown", (e) => {
 			if ($(e.target).is("input")) return;
-
-			if (e.key === "Backspace") {
-				this.set_value([]);
-			}
+			if (e.key === "Backspace") this.set_value([]);
 		});
 
 		this.$list_wrapper.on("show.bs.dropdown", () => {
 			this.set_options().then(() => {
+
 				if (!this._selected_values || !this._selected_values.length) {
 					this._selected_values = this.process_options(this.values);
 				}
@@ -124,6 +119,7 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	}
 
 	set_input_attributes() {
+
 		this.$list_wrapper
 			.attr("data-fieldtype", this.df.fieldtype)
 			.attr("data-fieldname", this.df.fieldname);
@@ -133,17 +129,10 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		if (this.doctype) {
 			this.$list_wrapper.attr("data-doctype", this.doctype);
 		}
-
-		if (this.df.input_css) {
-			this.$list_wrapper.css(this.df.input_css);
-		}
-
-		if (this.df.input_class) {
-			this.$list_wrapper.addClass(this.df.input_class);
-		}
 	}
 
 	clear_all_selections() {
+
 		this.values = [];
 		this._selected_values = [];
 		this.update_status();
@@ -152,6 +141,7 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	}
 
 	select_all_options() {
+
 		this.values = this._options.map((opt) => opt.value);
 		this._selected_values = this._options.slice();
 		this.update_status();
@@ -159,12 +149,13 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		this.parse_validate_and_set_in_model("");
 	}
 
-	toggle_select_item($selectable_item) {
-		$selectable_item.toggleClass("selected");
+	toggle_select_item($item) {
 
-		let value = decodeURIComponent($selectable_item.data().value);
+		$item.toggleClass("selected");
 
-		if ($selectable_item.hasClass("selected")) {
+		let value = decodeURIComponent($item.data().value);
+
+		if ($item.hasClass("selected")) {
 			this.values = this.values.slice();
 			this.values.push(value);
 		} else {
@@ -176,38 +167,8 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 		this.update_status();
 	}
 
-	set_value(value) {
-		if (!value) return Promise.resolve();
-
-		this._selected_values = [];
-
-		if (typeof value === "string") {
-			value = [value];
-		}
-
-		this.values.forEach((value) => {
-			this.$list_wrapper
-				.find(`.selectable-item[data-value=${CSS.escape(value)}]`)
-				.toggleClass("selected");
-		});
-
-		this.values = value;
-
-		this.values.forEach((value) => {
-			this.update_selected_values(value);
-
-			this.$list_wrapper
-				.find(`.selectable-item[data-value=${CSS.escape(value)}]`)
-				.toggleClass("selected");
-		});
-
-		this.parse_validate_and_set_in_model("");
-		this.update_status();
-
-		return Promise.resolve();
-	}
-
 	update_selected_values(value) {
+
 		this._selected_values = this._selected_values || [];
 
 		let option = this._options
@@ -215,27 +176,31 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 			.uniqBy((opt) => opt.value)
 			.find((opt) => opt.value === value);
 
-		if (option) {
-			if (this.values.includes(value)) {
-				this._selected_values.push(option);
-			} else {
-				this._selected_values = this._selected_values.filter(
-					(opt) => opt.value !== value
-				);
-			}
+		if (!option) return;
+
+		if (this.values.includes(value)) {
+			this._selected_values.push(option);
+		} else {
+			this._selected_values =
+				this._selected_values.filter((opt) => opt.value !== value);
 		}
 	}
 
 	update_status() {
+
 		let text;
 
 		if (this.values.length === 0) {
 			text = this.get_placeholder_text();
-		} else if (this.values.length === 1) {
+		}
+		else if (this.values.length === 1) {
+
 			let val = this.values[0];
 			let option = this._options.find((opt) => opt.value === val);
 			text = option ? option.label : val;
-		} else {
+		}
+		else {
+
 			text = __("{0} values selected", [this.values.length]);
 		}
 
@@ -251,40 +216,42 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	}
 
 	process_options(options) {
+
 		return options.map((option) => {
+
 			if (typeof option === "string") {
-				return {
-					label: option,
-					value: option,
-					description: "",
-				};
+				return { label: option, value: option, description: "" };
 			}
 
-			if (!option.label) {
-				option.label = option.value;
-			}
+			if (!option.label) option.label = option.value;
 
 			return option;
 		});
 	}
 
 	set_options() {
+
 		let promise = Promise.resolve();
 
 		if (this.df.get_data) {
+
 			let txt = this.$filter_input.val();
 			let value = this.df.get_data(txt);
 
 			if (!value) {
 				this._options = [];
-			} else if (value.then) {
+			}
+			else if (value.then) {
+
 				promise = value.then((options) => {
 					this._options = this.process_options(options);
 				});
-			} else {
+			}
+			else {
 				this._options = this.process_options(value);
 			}
-		} else {
+		}
+		else {
 			this._options = this.process_options(this.df.options);
 		}
 
@@ -292,24 +259,22 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	}
 
 	set_selectable_items(options) {
-		let html = options
-			.map((option) => {
-				let encoded_value = encodeURIComponent(option.value);
-				let selected = this.values.includes(option.value) ? "selected" : "";
 
-				return `<li class="selectable-item ${selected}" data-value="${encoded_value}">
-					<div>
-						<strong>${option.label}</strong>
-						<div class="small">${option.description}</div>
-					</div>
-					<div class="multiselect-check">${frappe.utils.icon("tick", "xs")}</div>
-				</li>`;
-			})
-			.join("");
+		let html = options.map((option) => {
 
-		if (!html) {
-			html = `<li class="text-muted">${__("No values to show")}</li>`;
-		}
+			let encoded = encodeURIComponent(option.value);
+			let selected = this.values.includes(option.value) ? "selected" : "";
+
+			return `<li class="selectable-item ${selected}" data-value="${encoded}">
+				<div>
+					<strong>${option.label}</strong>
+					<div class="small">${option.description || ""}</div>
+				</div>
+				<div class="multiselect-check">${frappe.utils.icon("tick","xs")}</div>
+			</li>`;
+		}).join("");
+
+		if (!html) html = `<li class="text-muted">${__("No values to show")}</li>`;
 
 		this.$list_wrapper.find(".selectable-items").html(html);
 		this.highlighted = -1;
@@ -318,85 +283,54 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 	get_value() {
 		return this.values;
 	}
-
-	highlight_item(value) {
-		this.highlighted += value;
-
-		if (this.highlighted < 0) this.highlighted = 0;
-
-		let $items = this.$list_wrapper.find(".selectable-item");
-
-		if (this.highlighted > $items.length - 1) {
-			this.highlighted = $items.length - 1;
-		}
-
-		let $item = $items[this.highlighted];
-
-		if (this._$last_highlighted) {
-			this._$last_highlighted.removeClass("highlighted");
-		}
-
-		this._$last_highlighted = $($item).addClass("highlighted");
-
-		this.scroll_dropdown_if_needed($item);
-	}
-
-	scroll_dropdown_if_needed($item) {
-		if ($item.scrollIntoView) {
-			$item.scrollIntoView({
-				behavior: "smooth",
-				block: "nearest",
-				inline: "start",
-			});
-		} else {
-			$item.parentNode.scrollTop =
-				$item.offsetTop - $item.parentNode.offsetTop;
-		}
-	}
 };
 
-// General Ledger account filter override
-setTimeout(() => {
 
-    if (frappe.query_report && frappe.query_report.report_name === "General Ledger") {
 
-        let filters = ["account", "party", "project", "cost_center"];
+/* ---------------------------------------------------------
+GLOBAL QUERY REPORT SUPPORT
+----------------------------------------------------------*/
 
-        filters.forEach(field => {
+frappe.after_ajax(() => {
 
-            let filter = frappe.query_report.get_filter(field);
-            if (!filter) return;
+	if (!frappe.query_report || !frappe.query_report.filters) return;
 
-            filter.df.get_data = function (txt) {
+	frappe.query_report.filters.forEach(filter => {
 
-                let doctype = filter.df.options;
-            
-                if (field === "party") {
-                    doctype = frappe.query_report.get_filter_value("party_type");
-                    if (!doctype) return [];
-                }
+		if (!filter || !filter.df) return;
 
-                let args = {
-                    doctype: doctype,
-                    txt: txt,
-                    page_length: 200
-                };
-            
-                if (field === "account" || field === "cost_center") {
-                    args.filters = {
-                        company: frappe.query_report.get_filter_value("company")
-                    };
-                }
+		if (filter.df.fieldtype !== "MultiSelectList") return;
 
-                return frappe.call({
-                    method: "frappe.desk.search.search_link",
-                    args: args
-                }).then(r => r.message);
+		filter.df.get_data = function (txt) {
 
-            };
+			let doctype = filter.df.options;
 
-        });
+			// party special case
+			if (filter.df.fieldname === "party") {
 
-    }
+				doctype = frappe.query_report.get_filter_value("party_type");
+				if (!doctype) return [];
+			}
 
-}, 1500);
+			let args = {
+				doctype: doctype,
+				txt: txt,
+				page_length: 200
+			};
+
+			if (["account","cost_center"].includes(filter.df.fieldname)) {
+
+				args.filters = {
+					company: frappe.query_report.get_filter_value("company")
+				};
+			}
+
+			return frappe.call({
+				method: "frappe.desk.search.search_link",
+				args: args
+			}).then(r => r.message);
+		};
+
+	});
+
+});
