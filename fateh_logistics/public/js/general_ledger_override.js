@@ -374,7 +374,7 @@ setTimeout(() => {
 
     if (frappe.query_report) {
 
-        let filters = ["account", "party", "project", "cost_center"];
+        let filters = ["vehicle", "cost_center"];
 
         filters.forEach(field => {
 
