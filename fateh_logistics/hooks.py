@@ -28,7 +28,8 @@ app_license = "mit"
 # app_include_css = "/assets/fateh_logistics/css/fateh_logistics.css"
 app_include_js = [
     "assets/fateh_logistics/js/driver_quick_entry.js",
-    "assets/fateh_logistics/js/vehicle_quick_entry.js"
+    "assets/fateh_logistics/js/vehicle_quick_entry.js",
+    "assets/fateh_logistics/js/general_ledger_override.js"
 ]
 
 # include js, css files in header of web template
