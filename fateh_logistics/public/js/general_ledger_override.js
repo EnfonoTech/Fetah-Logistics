@@ -358,28 +358,45 @@ frappe.ui.form.ControlMultiSelectList = class ControlMultiSelectList extends (
 // General Ledger account filter override
 setTimeout(() => {
 
-	if (frappe.query_report && frappe.query_report.report_name === "General Ledger") {
+    if (frappe.query_report && frappe.query_report.report_name === "General Ledger") {
 
-		let account_filter = frappe.query_report.get_filter("account");
+        let filters = ["account", "party", "project", "cost_center"];
 
-		if (account_filter) {
+        filters.forEach(field => {
 
-			account_filter.df.get_data = function (txt) {
-				return frappe.call({
-					method: "frappe.desk.search.search_link",
-					args: {
-						doctype: "Account",
-						txt: txt,
-						page_length: 200,
-						filters: {
-							company: frappe.query_report.get_filter_value("company")
-						}
-					}
-				}).then(r => r.message);
-			};
+            let filter = frappe.query_report.get_filter(field);
+            if (!filter) return;
 
-		}
+            filter.df.get_data = function (txt) {
 
-	}
+                let doctype = filter.df.options;
+            
+                if (field === "party") {
+                    doctype = frappe.query_report.get_filter_value("party_type");
+                    if (!doctype) return [];
+                }
 
-}, 2000);
+                let args = {
+                    doctype: doctype,
+                    txt: txt,
+                    page_length: 200
+                };
+            
+                if (field === "account" || field === "cost_center") {
+                    args.filters = {
+                        company: frappe.query_report.get_filter_value("company")
+                    };
+                }
+
+                return frappe.call({
+                    method: "frappe.desk.search.search_link",
+                    args: args
+                }).then(r => r.message);
+
+            };
+
+        });
+
+    }
+
+}, 1500);
