@@ -57,4 +57,32 @@ def get_stock_valuation_rate(item_code):
         LIMIT 1
     """, (item_code,), as_dict=1)
     return result[0].valuation_rate if result else 0.0
+
+
+@frappe.whitelist()
+def get_item_tax_template_filtered(doctype, txt, searchfield, start, page_len, filters):
+
+    parent = frappe.db.get_value(
+        "Account",
+        "Duties and Taxes - E",
+        ["lft", "rgt"],
+        as_dict=1
+    )
+
+    if not parent:
+        return []
+
+    return frappe.db.sql("""
+        SELECT DISTINCT itt.name
+        FROM `tabItem Tax Template` itt
+        JOIN `tabItem Tax Template Detail` ittd
+            ON ittd.parent = itt.name
+        JOIN `tabAccount` acc
+            ON acc.name = ittd.tax_type   
+        WHERE 
+            acc.lft >= %s AND acc.rgt <= %s
+            AND acc.account_type IN ('Tax', 'Chargeable', 'Income Account', 'Expense Account')
+            AND itt.name LIKE %s
+        LIMIT %s, %s
+    """, (parent.lft, parent.rgt, "%%%s%%" % txt, start, page_len))
 		
