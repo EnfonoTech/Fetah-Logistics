@@ -29,6 +29,7 @@ frappe.ui.form.on("Job Record", {
         });
     },
 
+    
     customer(frm) {
 
         frm.clear_custom_buttons();
@@ -555,6 +556,16 @@ frappe.ui.form.on("Job Record", {
         });
     },
 
+        refresh(frm) {
+       
+        frm.set_query("item_tax_template", "invoice_item", function () {
+            return {
+                query: "fateh_logistics.fateh_logistics.doctype.job_record.job_record.get_item_tax_template_filtered"
+            };
+        });
+
+    },
+
     async create_sales_invoice(frm) {
 
         // ---------------------------
@@ -690,3 +701,8 @@ frappe.ui.form.on("Job Record", {
         });
     }
 });
+
+
+
+
+
