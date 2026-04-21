@@ -1,0 +1,14 @@
+{
+ "custom_fields": [],
+ "custom_perms": [],
+ "doctype": "Project",
+ "links": [
+  {
+   "group": "Rent",
+   "link_doctype": "Rent Details",
+   "link_fieldname": "project"
+  }
+ ],
+ "property_setters": [],
+ "sync_on_migrate": 1
+}
