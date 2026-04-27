@@ -64,7 +64,7 @@ def get_item_tax_template_filtered(doctype, txt, searchfield, start, page_len, f
 
     parent = frappe.db.get_value(
         "Account",
-        "Duties and Taxes - E",
+        "Duties and Taxes - F",
         ["lft", "rgt"],
         as_dict=1
     )
